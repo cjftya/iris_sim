@@ -133,11 +133,8 @@ class ChatApp(ctk.CTk):
             # First, prepare the AI message area
             self.after(0, self.prepare_ai_message)
             
-            # Execute request
-            response = self.engine.run(model_name, prompt)
-            
             # Final response update
-            content = response.get("message", {}).get("content", "No response generated.")
+            content = self.engine.run(model_name, prompt)
             self.after(0, lambda: self.finalize_ai_message(content))
             
         except Exception as e:

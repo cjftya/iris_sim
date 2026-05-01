@@ -6,6 +6,6 @@ class Logger:
     def log(msg, value=None):
         if debug_mode:
             if value is None:
-                print(f"\n[DEBUG] {msg}\n")
+                print(f"[DEBUG] {msg}\n")
             else:
-                print(f"\n[DEBUG] {msg}\n {value}\n")
+                print(f"[DEBUG] {msg}\n {value}\n")
