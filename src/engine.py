@@ -1,0 +1,43 @@
+from llm_requester import LLMRequester
+from sim.iris_simulator import IrisSimulator
+
+class Engine:
+    def __init__(self):
+        self.llm_requester = None
+        self.output_callback = None
+        self.model_name = None
+        self.iris_simulator = None
+
+    def start(self, output_callback=None):
+        self.output_callback = output_callback
+        if self.llm_requester is None:
+            self.llm_requester = LLMRequester()
+            self.llm_requester.start_engine(full=True)
+        if self.iris_simulator is None:
+            self.iris_simulator = IrisSimulator()
+            self.iris_simulator.start(self.llm_requester, self.output_callback)
+
+    def load(self, api_key):
+        if self.llm_requester:
+            self.llm_requester.init_client()
+            self.llm_requester.set_api_key(api_key)
+        
+    def stop(self):
+        if self.llm_requester:
+            self.llm_requester.stop_engine(full=True)
+            self.llm_requester = None
+        if self.iris_simulator:
+            self.iris_simulator.stop()
+            self.iris_simulator = None
+
+    def run(self, model_name, prompt):
+        self.model_name = model_name
+        self.llm_requester.set_model_name(self.model_name)
+
+        response = self.iris_simulator.run(prompt)
+        return response
+
+    def get_model_list(self):
+        if self.llm_requester:
+            return self.llm_requester.get_installed_models()
+        return []
