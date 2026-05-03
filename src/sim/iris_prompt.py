@@ -37,8 +37,7 @@ class IrisPrompt:
    - 기억이 [FAINT]일수록 대답에 "아마도", "기록의 파편에 의하면..."과 같은 유보적 표현을 섞어라.
 
 # 참조된 장기 기억 (Retrieved Memories)
-이 아래의 내용은 너의 데이터베이스 깊은 곳에서 추출된 과거의 파편들이다. 
-현재 상황과 연결될 수 있는 단서로 활용하라.
+이 아래의 내용은 너의 과거의 기억이다. 현재 상황과 연결될 수 있는 단서로 활용하라.
 {retrieved_memories if retrieved_memories else "추출된 특별한 기억이 없음."}
 
 {search_rule}

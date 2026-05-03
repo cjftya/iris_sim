@@ -1,6 +1,8 @@
 import json
 import os
 import re
+import time
+import random
 from sim.iris_prompt import IrisPrompt
 from sim.iris_memory import IrisMemory
 from sim.iris_search import IrisSearch
@@ -8,11 +10,16 @@ from llm_requester import LLMRequester
 from log import Logger
 
 class IrisEngine:
-    def __init__(self):
+    def __init__(self, id):
+        self.id = id
         self.llm_requester = None
         self.world_context = ""
         self.persona_context = ""
         self.support_web_search = True
+
+        # gemini-3.1-flash-lite-preview limit (15 RPM)
+        self.last_call_time = 0
+        self.min_interval = 4.1  # 15 RPM = 4초당 1회이므로, 안전하게 4.1초 설정
 
         # 1. 성격 매트릭스 (Personality Matrix)
         # 모든 수치는 0.0 ~ 1.0 사이로 유지되며, 아이리스의 '현재 기분'과 '사고 편향'을 결정합니다.
@@ -30,7 +37,7 @@ class IrisEngine:
         }
 
         # 3. 메모리 엔진
-        self.iris_memory = IrisMemory()
+        self.iris_memory = IrisMemory(db_path=f"[{self.id}]_brain")
 
         # 4. 검색 엔진
         self.iris_search = IrisSearch()
@@ -43,11 +50,11 @@ class IrisEngine:
 
     def run(self, user_input):
         """
-        아이리스의 인지 루프: 지각 -> 회상 -> 고뇌 -> 발화 -> 각인
+        인지 루프: 지각 -> 회상 -> 고뇌 -> 발화 -> 각인
         """
         # STEP 1: 기억 소환 (Retrieval) - [VIVID]/[FAINT] 태그 포함
         memories = self.iris_memory.retrieve_memory(user_input, top_k=5)
-        Logger.log("소환된 기억 파편", memories if memories else "연관된 기억 없음")
+        Logger.log(f"[{self.id}] Memory", memories if memories else "연관된 기억 없음")
         
         # STEP 2: 프롬프트 구성 (Context Building)
         current_iris_state = json.dumps(self.personality_matrix, indent=2)
@@ -66,7 +73,7 @@ class IrisEngine:
 
         # STEP 3: 모델 호출 및 추론 (Inference)
         # 아이리스가 고뇌(Internal Monologue)하고 대답을 생성합니다.
-        response = self.llm_requester.request(context=context)
+        response = self._request(context=context)
 
         content = ""
         if isinstance(response, dict):
@@ -99,11 +106,11 @@ class IrisEngine:
 {search_result_text}
 
 위 데이터를 바탕으로 최종 답변을 작성하라. 
-**주의: 반드시 너의 성격 매트릭스와 '아이리스'로서의 페르소나를 유지하며, JSON 형식을 지켜라.**
+**주의: 반드시 너의 성격 매트릭스와 페르소나를 유지하며, JSON 형식을 지켜라.**
 """
                 })
 
-                response_2nd = self.llm_requester.request(context=context)
+                response_2nd = self._request(context=context)
 
                 content_2nd = ""
                 if isinstance(response_2nd, dict):
@@ -175,4 +182,49 @@ class IrisEngine:
                 self.personality_matrix[key] = max(0.0, min(1.0, new_val))
         
         Logger.log("Matrix Updated", self.personality_matrix)
-    
+
+    def _request(self, context, max_retries=10, base_delay=1):
+        self._wait_for_rate_limit() # cooldown before request
+        
+        retriable_errors = ["503", "429", "500", "504", "overloaded", "rate limit"]
+
+        for i in range(max_retries):
+            res = self.llm_requester.request(context=context)
+            content = res if isinstance(res, str) else res.get('message', {}).get('content', "")
+
+            if not res:
+                Logger.log("Error", "LLM으로부터 유효한 응답 내용을 받지 못했습니다.")
+                return "인지 프로세스 중단..."
+            
+            if "Error:" not in content:
+                return res
+            else:
+                error_msg = content
+                retriable_errors = ["503", "429", "500", "504", "overloaded", "rate limit"]
+
+                # 에러 메시지에 위 키워드 중 하나라도 포함되어 있는지 확인
+                if any(err in error_msg.lower() for err in retriable_errors):
+                    # 재시도 로직 실행 (지수 백오프)
+                    delay = (base_delay * (2 ** i)) + (random.uniform(0, 1))
+                    Logger.log("RETRY", f"일시적 장애 감지({error_msg}). {i+1}차 재시도 중...")
+                    time.sleep(delay)
+                    continue
+
+                # 안전 정책 차단 확인 (400 계열 중 특이 케이스)
+                if "safety" in error_msg.lower():
+                    Logger.log("SAFETY_BLOCK", "안전 가이드라인에 의해 차단되었습니다.")
+                    return {"final_response": "...... (규정에 의해 말문이 막혔습니다.)", "state_delta": {}}
+
+                # 그 외 치명적 에러는 즉시 중단
+                Logger.log("FATAL", f"중단된 인지 프로세스: {error_msg}")
+                raise res
+
+    def _wait_for_rate_limit(self):
+        """호출 전 최소 간격을 보장함"""
+        now = time.time()
+        elapsed = now - self.last_call_time
+        if elapsed < self.min_interval:
+            wait_time = self.min_interval - elapsed
+            # Logger.log("RATE_LIMIT", f"안정적 RPM 유지를 위해 {wait_time:.2f}초 대기...")
+            time.sleep(wait_time)
+        self.last_call_time = time.time()
