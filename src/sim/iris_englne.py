@@ -98,8 +98,8 @@ class IrisEngine:
                 search_query = tool_req.get("query")
                 search_result_text = self.iris_search.search(search_query)
 
-                Logger.log("검색어", search_query)
-                Logger.log("검색 결과", search_result_text)
+                Logger.log_debug("검색어", search_query)
+                Logger.log_debug("검색 결과", search_result_text)
 
                 # 검색 결과를 컨텍스트에 추가하여 2차 추론 요청
                 context.append({"role": "assistant", "content": content})
@@ -128,10 +128,10 @@ class IrisEngine:
         if result:
             # 사고 결과물 추출
             state_delta = result.get('state_delta', {})    # 이번 대화로 인한 심리 변화량
-            new_memories = result.get('memories_to_save', []) # 새롭게 저장할 지식(Triplets)
+            new_memories = result.get('memories_to_save', []) # 새롭게 저장할 지식
 
             # STEP 5: 상태 업데이트 및 저장
-            # 1. 감정 매트릭스 수치 갱신 (Clamping 포함)
+            # 1. 감정 매트릭스 수치 갱신
             self.update_matrix(state_delta)
             
             # 2. 새로운 지식을 그래프 DB에 각인
@@ -142,11 +142,14 @@ class IrisEngine:
 
         return f"데이터 해석 실패:\n{response}"
 
-    def set_enabled_web_search(self, enabled):
-        self.support_web_search = enabled
+    def set_llm_requester(self, llm_requester):
+        self.llm_requester = llm_requester
 
     def set_serper_api_key(self, api_key):
         self.iris_search.set_serper_api_key(api_key)
+
+    def set_enabled_web_search(self, enabled):
+        self.support_web_search = enabled
 
     def set_memory_params(self, decay_rate=None, sim_threshold=None, vivid_threshold=None, imp_weight=None, impact_weight=None):
         self.iris_memory.set_memory_params(decay_rate, sim_threshold, vivid_threshold, imp_weight, impact_weight)
@@ -166,13 +169,9 @@ class IrisEngine:
     def set_participants(self, participants):
         self.participants = participants
 
-    def set_llm_requester(self, llm_requester):
-        self.llm_requester = llm_requester
-
     def _parse_llm_response(self, text):
         """LLM 응답에서 JSON만 안전하게 추출"""
         try:
-            # 정규표현식으로 ```json ... ``` 사이의 내용만 추출하거나 전체에서 JSON 검색
             json_match = re.search(r'\{.*\}', text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
@@ -185,16 +184,16 @@ class IrisEngine:
         """매트릭스 수치 업데이트 및 경계값 고정(Clamping)"""
         for key, value in delta.items():
             if key in self.personality_matrix:
-                # 급격한 변화 방지를 위해 변화폭 제한 (옵션)
+                # 급격한 변화 방지를 위해 변화폭 제한
                 limited_delta = max(-0.3, min(0.3, value)) 
                 new_val = round(self.personality_matrix[key] + limited_delta, 2)
                 # 0.0 ~ 1.0 범위 강제
                 self.personality_matrix[key] = max(0.0, min(1.0, new_val))
         
-        Logger.log("Matrix Updated", self.personality_matrix)
+        Logger.log_debug("Matrix Updated", self.personality_matrix)
 
     def _request(self, context, max_retries=10, base_delay=1):
-        self._wait_for_rate_limit() # cooldown before request
+        self._wait_for_rate_limit() 
         
         retriable_errors = ["503", "429", "500", "504", "overloaded", "rate limit"]
 
@@ -235,6 +234,5 @@ class IrisEngine:
         elapsed = now - self.last_call_time
         if elapsed < self.min_interval:
             wait_time = self.min_interval - elapsed
-            # Logger.log("RATE_LIMIT", f"안정적 RPM 유지를 위해 {wait_time:.2f}초 대기...")
             time.sleep(wait_time)
         self.last_call_time = time.time()

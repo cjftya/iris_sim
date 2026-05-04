@@ -36,6 +36,6 @@ class IrisSearch:
                 link = res.get('link', '')
                 condensed.append(f"🔍 {title}\n   - 내용: {snippet}\n   - 출처: {link}")
             
-            return "\n\n".join(condensed) if condensed else "검색 결과가 없습니다."
+            return "\n".join(condensed) if condensed else "검색 결과가 없습니다."
         except Exception as e:
             return f"외부 신호 수신 실패: {e}"

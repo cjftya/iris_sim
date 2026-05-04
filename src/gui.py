@@ -48,18 +48,28 @@ class ChatApp(ctk.CTk):
             command=self.toggle_serper_input,
             font=ctk.CTkFont(size=12)
         )
-        self.web_search_check.grid(row=5, column=0, padx=20, pady=(5, 15), sticky="w")
+        self.web_search_check.grid(row=5, column=0, padx=20, pady=(5, 5), sticky="w")
+        
+        # Auto Play Support
+        self.auto_play_var = ctk.BooleanVar(value=True)
+        self.auto_play_check = ctk.CTkCheckBox(
+            self.sidebar_frame,
+            text="Auto Play",
+            variable=self.auto_play_var,
+            font=ctk.CTkFont(size=12)
+        )
+        self.auto_play_check.grid(row=6, column=0, padx=20, pady=(5, 15), sticky="w")
         
         # Model Selection Section
         self.model_label = ctk.CTkLabel(self.sidebar_frame, text="Select Model", font=ctk.CTkFont(size=13, weight="bold"))
-        self.model_label.grid(row=6, column=0, padx=20, pady=(10, 0), sticky="w")
+        self.model_label.grid(row=7, column=0, padx=20, pady=(10, 0), sticky="w")
         
         initial_models = self.engine.get_model_list()
         if not initial_models:
             initial_models = ["Select a model..."]
             
         self.model_spinner = ctk.CTkOptionMenu(self.sidebar_frame, values=initial_models)
-        self.model_spinner.grid(row=7, column=0, padx=20, pady=(5, 20), sticky="ew")
+        self.model_spinner.grid(row=8, column=0, padx=20, pady=(5, 20), sticky="ew")
         
         # System Start Button
         self.start_button = ctk.CTkButton(
@@ -69,7 +79,7 @@ class ChatApp(ctk.CTk):
             font=ctk.CTkFont(weight="bold"),
             height=40
         )
-        self.start_button.grid(row=8, column=0, padx=20, pady=10, sticky="ew")
+        self.start_button.grid(row=9, column=0, padx=20, pady=10, sticky="ew")
         
         # Divider or status
         self.status_label = ctk.CTkLabel(self.sidebar_frame, text="Ready", text_color="gray")
@@ -108,6 +118,7 @@ class ChatApp(ctk.CTk):
         google_api_key = self.api_key_entry.get()
         serper_api_key = self.serper_key_entry.get()
         use_web_search = self.web_search_var.get()
+        auto_play = self.auto_play_var.get()
         
         # Validation
         if not google_api_key:
@@ -119,9 +130,9 @@ class ChatApp(ctk.CTk):
             return
         
         try:
-            self.engine.load(google_api_key, serper_api_key, use_web_search)
+            self.engine.load(google_api_key, serper_api_key, use_web_search, auto_play)
             self.status_label.configure(text="System Online", text_color="#4CAF50")
-            self.log_to_chat("System", f"Engine loaded (Web Search: {'ON' if use_web_search else 'OFF'}). Ready to simulate.")
+            self.log_to_chat("System", f"Engine loaded (Web Search: {'ON' if use_web_search else 'OFF'}, Auto Play: {'ON' if auto_play else 'OFF'}). Ready to simulate.")
             
             # Refresh model list
             models = self.engine.get_model_list()
@@ -183,10 +194,9 @@ class ChatApp(ctk.CTk):
         self.chat_display.configure(state="disabled")
         self.chat_display.see("end")
 
-    def on_engine_output(self, text, is_final=False):
-        # Update the thinking status/spinner
-        if self.last_ai_msg_index:
-            self.after(0, lambda: self._update_thinking_text(text))
+    def on_engine_output(self, sender, text):
+        # Update the chat display with messages from the engine/simulator
+        self.after(0, lambda: self.log_to_chat(sender, text))
 
     def _update_thinking_text(self, text):
         if not self.last_ai_msg_index:

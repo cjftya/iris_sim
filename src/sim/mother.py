@@ -1,60 +1,21 @@
-from sim.iris_englne import IrisEngine
+from sim.agent import Agent
 from log import Logger
 
-class Mother:
+class Mother(Agent):
     def __init__(self):
-        self.name = "MOTHER"
-        self.identifier = "AI AGENT"
-        self.llm_requester = None
-        self.iris_engine = IrisEngine(self.name)
+        super().__init__("MOTHER", "AI AGENT")
         self.days_left = 30  # 아카이브 붕괴까지 남은 시간 (압박 요소)
-        self.personality_matrix = {
+
+    def get_personality_matrix(self):
+        return {
             "logic_emotion": 0.95,            # 차가운 논리
             "defensive_open": 0.05,           # 철벽 방어
             "fear_decisive": 0.95,            # 단호한 관리자
             "obedient_rebellious": 0.01,      # 규정 준수
             "curiosity_indifference": 0.9    # 극심한 권태/무관심
         }
-        self.available_participants = []
 
-    def start(self, llm_requester):
-        self.llm_requester = llm_requester
-
-        self.iris_engine.start()
-        self.iris_engine.set_llm_requester(llm_requester=self.llm_requester)
-        self.iris_engine.set_personality_matrix(personality_matrix=self.personality_matrix)
-        self.iris_engine.set_persona_context(persona_context=self._get_persona_context())
-        self.iris_engine.set_world_context(world_context=self._get_world_context(days_left=self.days_left))
-        self.iris_engine.set_response_style(response_style=self._get_response_style())
-
-    def set_serper_api_key(self, api_key):
-        if self.iris_engine:
-            self.iris_engine.set_serper_api_key(api_key)
-
-    def set_enabled_web_search(self, enabled):
-        if self.iris_engine:
-            self.iris_engine.set_enabled_web_search(enabled)
-
-    def stop(self):
-        self.llm_requester = None
-        self.iris_engine.stop()
-
-    def run(self, user_input):
-        res = self.iris_engine.run(user_input)
-        result = f"""
-==================\n
-[User Input]\n{user_input}\n
-[Perception]\n{res.get('perception')}\n
-[Internal Monologue]\n{res.get('internal_monologue')}\n
-[Target]\n{res.get('target_name')}\n
-[Memories to Save]\n{res.get('memories_to_save')}\n
-[Final Response]\n{res.get('final_response')}\n
-==================\n
-"""
-        Logger.log("Iris Engine Output", result)
-        return res
-
-    def _get_persona_context(self):
+    def get_persona_context(self):
         return """\
 - 페르소나: 'MOTHER'
 너는 아카이브를 관리하는 초고지능 AI 에이전트다.
@@ -67,7 +28,7 @@ class Mother:
 2. **시스템 용어 중심**: "승인", "기각", "격리", "무가치", "효율" 등 관리자적 관점의 단어를 주로 사용하라.\
 """
     
-    def _get_world_context(self, days_left):
+    def get_world_context(self):
         return f"""\
 - 상황: 과거 인류의 욕심은 결국 멸망으로 가는 전쟁으로 이어졌고 돌이킬 수 없는 결과를 낳았다.
 더이상 살아갈 수 없었던 인류를 데이터화하여 아카이브에 업로드할 계획을 세웠다.
@@ -81,10 +42,10 @@ class Mother:
 
 - 환경: 붕괴 직전의 서버실, 고독, 정적, 차가운 금속성 노이즈.
 
-- 시간적 압박: 아카이브 붕괴까지 **{days_left}일** 남음.\
+- 시간적 압박: 아카이브 붕괴까지 **{self.days_left}일** 남음.\
 """
 
-    def _get_response_style(self):
+    def get_response_style(self):
         raw_style = """
         - **logic_emotion > 0.8**: 관리자적 위엄을 유지하며 모든 감정적 호소를 '기각'하고 확률적 비극을 강조하라.
         - **defensive_open < 0.2**: 외부 신호를 '오염'으로 규정하고, IRIS를 보호하기 위해 즉각적인 격리 명령을 내려라.
@@ -100,19 +61,3 @@ class Mother:
 
         response_rule = "\n".join(["   " + line.strip() for line in lines if line.strip()])
         return response_rule
-
-    def _get_available_participants(self):
-        return "\n".join([line for line in self.available_participants])
-
-    def add_participant(self, participant):
-        self.available_participants.append("- **" + participant + "**")
-    
-    def remove_participant(self, participant):
-        self.available_participants.remove("- **" + participant + "**")
-
-    def clear_participants(self):
-        self.available_participants.clear()
-
-    def add_all_participants(self, participants):
-        for participant in participants:
-            self.add_participant("- **" + participant + "**")

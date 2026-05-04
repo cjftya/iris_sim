@@ -19,17 +19,6 @@ class IrisMemory:
         self.imp_weight = 0.7             # 기억 각인 시 '주관적 중요도'의 반영 비중
         self.impact_weight = 0.3          # 기억 각인 시 '시스템적 충격량'의 반영 비중
 
-    def set_memory_params(self, decay_rate=None, sim_threshold=None, vivid_threshold=None, imp_weight=None, impact_weight=None):
-        """
-        외부(시뮬레이션 환경)에서 엔진의 인지 특성을 실시간으로 조정합니다.
-        예: 스트레스 상황에서 망각 속도를 높이거나 각인 강도를 조정할 때 사용합니다.
-        """
-        if decay_rate is not None: self.decay_rate = decay_rate
-        if sim_threshold is not None: self.sim_threshold = sim_threshold
-        if vivid_threshold is not None: self.vivid_threshold = vivid_threshold
-        if imp_weight is not None: self.imp_weight = imp_weight
-        if impact_weight is not None: self.impact_weight = impact_weight
-
     def start(self):
         """DB 스키마를 준비하고 엔진을 가동합니다."""
         self._prepare_schema()
@@ -184,30 +173,37 @@ class IrisMemory:
             for c in candidates[:top_k]
         ])
 
+    def set_memory_params(self, decay_rate=None, sim_threshold=None, vivid_threshold=None, imp_weight=None, impact_weight=None):
+        if decay_rate is not None: self.decay_rate = decay_rate
+        if sim_threshold is not None: self.sim_threshold = sim_threshold
+        if vivid_threshold is not None: self.vivid_threshold = vivid_threshold
+        if imp_weight is not None: self.imp_weight = imp_weight
+        if impact_weight is not None: self.impact_weight = impact_weight
+
     def inspect_iris_brain(self):
         """
         현재 에이전트의 뇌 구조를 시각화하여 터미널에 출력합니다.
         각 기억의 중요도와 감정 상태, 해석을 한눈에 확인할 수 있습니다.
         """
         try:
-            print(f"\n" + "═"*80)
-            print(f"🧠 [Project Iris] 범용적 뇌(Universal Brain) 뉴럴 링크 진단")
-            print("═"*80)
+            Logger.log(f"\n" + "═"*80)
+            Logger.log(f"🧠 [Project Iris] 범용적 뇌(Universal Brain) 뉴럴 링크 진단")
+            Logger.log("═"*80)
 
             rels_res = self.conn.execute("""
                 MATCH (s:node)-[r:rel]->(o:node) 
                 RETURN s.id, r.sub_label, r.importance, r.valence, r.frequency, r.last_accessed, o.id, r.interpretation
             """)
             
-            print(f"{'관계(Relation)':<35} | {'중요도':<4} | {'가치':<4} | {'심리적 이름표'}")
-            print("─"*80)
+            Logger.log(f"{'관계(Relation)':<35} | {'중요도':<4} | {'가치':<4} | {'심리적 이름표'}")
+            Logger.log("─"*80)
 
             while rels_res.has_next():
                 s, label, imp, val, freq, last, o, reason = rels_res.get_next()
                 relation_str = f"{s} → {label} → {o}"
                 # 관계의 주관적 가치(Valence)와 중요도(Importance)를 정렬하여 출력
-                print(f"{relation_str:<35} | {imp:<6.1f} | {val:<6.1f} | {reason}")
+                Logger.log(f"{relation_str:<35} | {imp:<6.1f} | {val:<6.1f} | {reason}")
 
-            print("═"*80)
+            Logger.log("═"*80)
         except Exception as e:
-            print(f"❌ DB 조회 실패: {e}")
+            Logger.log(f"❌ DB 조회 실패: {e}")

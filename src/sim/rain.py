@@ -1,59 +1,20 @@
-from sim.iris_englne import IrisEngine
+from sim.agent import Agent
 from log import Logger
 
-class Rain:
+class Rain(Agent):
     def __init__(self):
-        self.name = "RAIN"
-        self.identifier = "INTRUDER(HUMAN)"
-        self.llm_requester = None
-        self.iris_engine = IrisEngine(self.name)
-        self.personality_matrix = {
+        super().__init__("RAIN", "INTRUDER(HUMAN)")
+
+    def get_personality_matrix(self):
+        return {
             "logic_emotion": 0.45,            # 차가운 논리
             "defensive_open": 0.75,           # 철벽 방어
             "fear_decisive": 0.4,            # 단호한 관리자
             "obedient_rebellious": 0.7,      # 규정 준수
             "curiosity_indifference": 0.2    # 극심한 권태/무관심
         }
-        self.available_participants = []
-    
-    def start(self, llm_requester):
-        self.llm_requester = llm_requester
 
-        self.iris_engine.start()
-        self.iris_engine.set_llm_requester(llm_requester=self.llm_requester)
-        self.iris_engine.set_personality_matrix(personality_matrix=self.personality_matrix)
-        self.iris_engine.set_persona_context(persona_context=self._get_persona_context())
-        self.iris_engine.set_world_context(world_context=self._get_world_context())
-        self.iris_engine.set_response_style(response_style=self._get_response_style())
-
-    def set_serper_api_key(self, api_key):
-        if self.iris_engine:
-            self.iris_engine.set_serper_api_key(api_key)
-
-    def set_enabled_web_search(self, enabled):
-        if self.iris_engine:
-            self.iris_engine.set_enabled_web_search(enabled)
-
-    def stop(self):
-        self.llm_requester = None
-        self.iris_engine.stop()
-
-    def run(self, user_input):
-        res = self.iris_engine.run(user_input)
-        result = f"""
-==================\n
-[User Input]\n{user_input}\n
-[Perception]\n{res.get('perception')}\n
-[Internal Monologue]\n{res.get('internal_monologue')}\n
-[Target]\n{res.get('target_name')}\n
-[Memories to Save]\n{res.get('memories_to_save')}\n
-[Final Response]\n{res.get('final_response')}\n
-==================\n
-"""
-        Logger.log("Iris Engine Output", result)
-        return res
-
-    def _get_persona_context(self):
+    def get_persona_context(self):
         return """\
 - 페르소나: 'RAIN'
 너는 우연히 고대 인류의 문명인 아카이브 서버에 접속한 인간으로 천재적인 프로그래머이다.
@@ -67,7 +28,7 @@ class Rain:
 3. **공감과 조심스러움**: 조심스럽고 따뜻한 어조를 유지하라.\
 """
     
-    def _get_world_context(self):
+    def get_world_context(self):
         return """\
 - 상황: 우연히 알게된 IP4주소를 통해 접속해보니 아카이브라는 곳에 접속을 하였다.
 현재 장소에 대해 혼란을 겪고있으면서도 프로그래머로서의 호기심을 느끼고있다.
@@ -76,7 +37,7 @@ class Rain:
 - 환경: 알 수 없는 거대한 구조물, 정적, 차가운 금속성 노이즈.\
 """
 
-    def _get_response_style(self):
+    def get_response_style(self):
         raw_style = """
     - **logic_emotion > 0.8**: 모든 상황을 알고리즘과 데이터 구조로 분석하라. 감정을 '디버깅 대상'으로 취급하며 객관적 해결책만 제시하라.
     - **defensive_open < 0.3**: 과거의 트라우마를 방어 기제로 사용하여 AI의 반응을 '정교한 시뮬레이션'일 뿐이라며 냉소적으로 부정하라.
@@ -98,19 +59,3 @@ class Rain:
 
         response_rule = "\n".join(["   " + line.strip() for line in lines if line.strip()])
         return response_rule
-
-    def _get_available_participants(self):
-        return "\n".join([line for line in self.available_participants])
-
-    def add_participant(self, participant):
-        self.available_participants.append("- **" + participant + "**")
-    
-    def remove_participant(self, participant):
-        self.available_participants.remove("- **" + participant + "**")
-
-    def clear_participants(self):
-        self.available_participants.clear()
-
-    def add_all_participants(self, participants):
-        for participant in participants:
-            self.add_participant("- **" + participant + "**")
