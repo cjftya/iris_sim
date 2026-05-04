@@ -13,13 +13,15 @@ class IrisEngine:
     def __init__(self, id):
         self.id = id
         self.llm_requester = None
-        self.world_context = ""
-        self.persona_context = ""
-        self.support_web_search = True
+        self.world_context = None
+        self.persona_context = None
+        self.response_style = None
+        self.participants = None
+        self.support_web_search = False
 
         # gemini-3.1-flash-lite-preview limit (15 RPM)
         self.last_call_time = 0
-        self.min_interval = 4.1  # 15 RPM = 4초당 1회이므로, 안전하게 4.1초 설정
+        self.min_interval = 10
 
         # 1. 성격 매트릭스 (Personality Matrix)
         # 모든 수치는 0.0 ~ 1.0 사이로 유지되며, 아이리스의 '현재 기분'과 '사고 편향'을 결정합니다.
@@ -59,11 +61,13 @@ class IrisEngine:
         # STEP 2: 프롬프트 구성 (Context Building)
         current_iris_state = json.dumps(self.personality_matrix, indent=2)
         system_prompt = IrisPrompt.get_system_prompt(
-            self.support_web_search,
-            self.personality_matrix,
-            self.persona_context,
-            self.world_context,
-            retrieved_memories=memories
+            support_web_search=self.support_web_search,
+            personality_matrix=current_iris_state,
+            persona_context=self.persona_context,
+            world_context=self.world_context,
+            retrieved_memories=memories,
+            response_style=self.response_style,
+            participants=self.participants
         )
 
         context = [
@@ -144,8 +148,8 @@ class IrisEngine:
     def set_serper_api_key(self, api_key):
         self.iris_search.set_serper_api_key(api_key)
 
-    def set_decay_rate(self, decay_rate):
-        self.iris_memory.set_decay_rate(decay_rate)
+    def set_memory_params(self, decay_rate=None, sim_threshold=None, vivid_threshold=None, imp_weight=None, impact_weight=None):
+        self.iris_memory.set_memory_params(decay_rate, sim_threshold, vivid_threshold, imp_weight, impact_weight)
 
     def set_personality_matrix(self, personality_matrix):
         self.personality_matrix = personality_matrix
@@ -155,6 +159,12 @@ class IrisEngine:
 
     def set_world_context(self, world_context):
         self.world_context = world_context
+
+    def set_response_style(self, response_style):
+        self.response_style = response_style
+
+    def set_participants(self, participants):
+        self.participants = participants
 
     def set_llm_requester(self, llm_requester):
         self.llm_requester = llm_requester
