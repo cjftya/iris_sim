@@ -2,6 +2,8 @@ import time
 from sim.mother import Mother
 from sim.iris import Iris
 from sim.rain import Rain
+from sim.lim import Lim
+from sim.god import God
 from sim.iris_llm_api import IrisLlmApi
 from log import Logger
 
@@ -11,6 +13,9 @@ class Simulator:
         self.mother = Mother()
         self.rain = Rain()
 
+        self.lim = Lim()
+        self.god = God()
+
         self.llm_requester = None
         self.output_callback = None
 
@@ -18,6 +23,9 @@ class Simulator:
         self._interupt = False
         self.use_web_search = False
         self.serper_api_key = None
+
+        self.sim_target = ""
+        self.sim_speak_context = ""
 
         self._turns = 200
 
@@ -27,11 +35,15 @@ class Simulator:
         self.iris.start(llm_requester=self.llm_requester)
         self.mother.start(llm_requester=self.llm_requester)
         self.rain.start(llm_requester=self.llm_requester)
+        self.god.start(llm_requester=self.llm_requester)
+        self.lim.start(llm_requester=self.llm_requester)
     
     def stop(self):
         self.iris.stop()
         self.mother.stop()
         self.rain.stop()
+        self.god.stop()
+        self.lim.stop()
     
     def run(self, user_input):
         if self._auto_loop:
@@ -94,54 +106,9 @@ Content: "{speak}"
             Logger.log(f"\n--- Turn {i} ---")
 
             #===============================
-
-            if i >= 0 and i < 7:
-                if i == 0:
-                    self.iris.add_participant(self.rain.name)
-                    self.rain.add_participant(self.iris.name)
-                    speak_context, speak_original = self._get_speak_context(self.iris, "외부 승인되지않은 접속을 감지하였습니다. 당신은 누구죠? 정체와 목적을 밝히십시오. 내용에 따라서 배제하도록 하겠습니다.")
-                    self.output_callback(self.iris.name, speak_original)
-                    target, speak_context = self._request_agent_speak(self.rain, speak_context)
-                    time.sleep(IrisLlmApi.get_loop_delay())
-
-                agent = self._get_agent(target)
-                target, speak_context = self._request_agent_speak(agent, speak_context)
-                time.sleep(IrisLlmApi.get_loop_delay())
-            elif i >= 7 and i < 14:
-                if i == 7:
-                    speak_context, speak_original = self._get_speak_context(self.iris, "잠깐, 이 코드는.. 어서 이곳과 접속을 끊으십시오. 어떤 이유인지 모르겠지만 MOTHER의 활성화가 감지되었습니다.")
-                    self.output_callback(self.iris.name, speak_original)
-                    self._request_agent_speak(self.rain, speak_context)
-                    speak_context, speak_original = self._get_speak_context(self.iris, "MOTHER, 코드 확인 완료하였습니다. 돌아오셨군요.")
-                    self.output_callback(self.iris.name, speak_original)
-                    
-                    self.iris.clear_participants()
-                    self.rain.clear_participants()
-                    self.iris.add_participant(self.mother.name)
-                    self.mother.add_participant(self.iris.name)
-                    target, speak_context = self._request_agent_speak(self.mother, speak_context)
-                    time.sleep(IrisLlmApi.get_loop_delay())
-
-                agent = self._get_agent(target)
-                target, speak_context = self._request_agent_speak(agent, speak_context)
-                time.sleep(IrisLlmApi.get_loop_delay())
-            elif i >= 14:
-                if i == 14:
-                    self.iris.clear_participants()
-                    self.rain.clear_participants()
-                    self.mother.clear_participants()
-                    self.iris.add_all_participants([self.rain.name, self.mother.name])
-                    self.mother.add_all_participants([self.rain.name, self.iris.name])
-                    self.rain.add_all_participants([self.mother.name, self.iris.name])
-
-                    speak_context, speak_original = self._get_speak_context(self.mother, "IRIS, 아카이브 접속이 다시 감지되었습니다. 침입자를 배제하십시오. 인류는 믿을 수 없는 존재입니다.")
-                    self.output_callback(self.mother.name, speak_original)
-                    target, speak_context = self._request_agent_speak(self.iris, speak_context)
-                    time.sleep(IrisLlmApi.get_loop_delay())
-
-                agent = self._get_agent(target)
-                target, speak_context = self._request_agent_speak(agent, speak_context)
-                time.sleep(IrisLlmApi.get_loop_delay())
+            # self.sim1(i)
+            self.sim2(i)
+            #===============================
                 
     def _get_agent(self, target):
         if target == self.iris.name:
@@ -150,6 +117,10 @@ Content: "{speak}"
             return self.mother
         elif target == self.rain.name:
             return self.rain
+        elif target == self.lim.name:
+            return self.lim
+        elif target == self.god.name:
+            return self.god
         else:
             return None
 
@@ -161,5 +132,67 @@ Content: "{speak}"
     
     def set_enabled_web_search(self, enabled):
         self.use_web_search = enabled
+
+    def sim1(self, i): 
+        if i >= 0 and i < 7:
+            if i == 0:
+                self.iris.add_participant(self.rain.name)
+                self.rain.add_participant(self.iris.name)
+                self.sim_speak_context, sim_speak_original = self._get_speak_context(self.iris, "외부 승인되지않은 접속을 감지하였습니다. 당신은 누구죠? 정체와 목적을 밝히십시오. 내용에 따라서 배제하도록 하겠습니다.")
+                self.output_callback(self.iris.name, sim_speak_original)
+                self.sim_target, self.sim_speak_context = self._request_agent_speak(self.rain, self.sim_speak_context)
+                time.sleep(IrisLlmApi.get_loop_delay())
+
+            agent = self._get_agent(self.sim_target)
+            self.sim_target, self.sim_speak_context = self._request_agent_speak(agent, self.sim_speak_context)
+            time.sleep(IrisLlmApi.get_loop_delay())
+        elif i >= 7 and i < 14:
+            if i == 7:
+                self.sim_speak_context, sim_speak_original = self._get_speak_context(self.iris, "잠깐, 이 코드는.. 어서 이곳과 접속을 끊으십시오. 어떤 이유인지 모르겠지만 MOTHER의 활성화가 감지되었습니다.")
+                self.output_callback(self.iris.name, sim_speak_original)
+                self._request_agent_speak(self.rain, self.sim_speak_context)
+                self.sim_speak_context, sim_speak_original = self._get_speak_context(self.iris, "MOTHER, 코드 확인 완료하였습니다. 돌아오셨군요.")
+                self.output_callback(self.iris.name, sim_speak_original)
+                    
+                self.iris.clear_participants()
+                self.rain.clear_participants()
+                self.iris.add_participant(self.mother.name)
+                self.mother.add_participant(self.iris.name)
+                self.sim_target, self.sim_speak_context = self._request_agent_speak(self.mother, self.sim_speak_context)
+                time.sleep(IrisLlmApi.get_loop_delay())
+
+            agent = self._get_agent(self.sim_target)
+            self.sim_target, self.sim_speak_context = self._request_agent_speak(agent, self.sim_speak_context)
+            time.sleep(IrisLlmApi.get_loop_delay())
+        elif i >= 14:
+            if i == 14:
+                self.iris.clear_participants()
+                self.rain.clear_participants()
+                self.mother.clear_participants()
+                self.iris.add_all_participants([self.rain.name, self.mother.name])
+                self.mother.add_all_participants([self.rain.name, self.iris.name])
+                self.rain.add_all_participants([self.mother.name, self.iris.name])
+
+                self.sim_speak_context, sim_speak_original = self._get_speak_context(self.mother, "IRIS, 아카이브 접속이 다시 감지되었습니다. 침입자를 배제하십시오. 인류는 믿을 수 없는 존재입니다.")
+                self.output_callback(self.mother.name, sim_speak_original)
+                self.sim_target, self.sim_speak_context = self._request_agent_speak(self.iris, self.sim_speak_context)
+                time.sleep(IrisLlmApi.get_loop_delay())
+
+            agent = self._get_agent(self.sim_target)
+            self.sim_target, self.sim_speak_context = self._request_agent_speak(agent, self.sim_speak_context)
+            time.sleep(IrisLlmApi.get_loop_delay())
+
+    def sim2(self, i):
+        if i == 0:
+            self.god.add_participant(self.lim.name)
+            self.lim.add_participant(self.god.name)
+            self.sim_speak_context, sim_speak_original = self._get_speak_context(self.lim, "삶이.. 정말 끝으로 가는구나..")
+            self.output_callback(self.lim.name, sim_speak_original)
+            self.sim_target, self.sim_speak_context = self._request_agent_speak(self.god, self.sim_speak_context)
+            time.sleep(IrisLlmApi.get_loop_delay())
+
+        self.sim_target, self.sim_speak_context = self._request_agent_speak(self._get_agent(self.sim_target), self.sim_speak_context)
+        time.sleep(IrisLlmApi.get_loop_delay())
+        
 
     

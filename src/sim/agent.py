@@ -15,7 +15,7 @@ class Agent:
         # obedient_rebellious : 복종적인가 반항적인가
         # curiosity_indifference : 호기심이 많은가 무관심한가
         self.personality_matrix = self.get_personality_matrix()
-        self.relationship_map = None
+        self.relationship_map = {}
 
         # 공간 정보
         self.current_location = ""
