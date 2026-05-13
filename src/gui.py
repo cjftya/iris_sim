@@ -9,7 +9,7 @@ class ChatApp(ctk.CTk):
         self.engine = engine
         
         # Configure window
-        self.title("Iris AI Chat Simulator")
+        self.title("Iris Brain Agent")
         self.geometry("1100x750")
         
         # Set appearance
@@ -25,7 +25,7 @@ class ChatApp(ctk.CTk):
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(10, weight=1)
         
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="IRIS SIM", font=ctk.CTkFont(size=24, weight="bold"))
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="IRIS BRAIN AGENT", font=ctk.CTkFont(size=24, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(30, 20))
         
         # API Key Section
@@ -56,6 +56,7 @@ class ChatApp(ctk.CTk):
             self.sidebar_frame,
             text="Auto Play",
             variable=self.auto_play_var,
+            command=self.toggle_auto_play,
             font=ctk.CTkFont(size=12)
         )
         self.auto_play_check.grid(row=6, column=0, padx=20, pady=(5, 15), sticky="w")
@@ -110,6 +111,9 @@ class ChatApp(ctk.CTk):
         # Handle close
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
+        # Initialize state
+        self.toggle_auto_play()
+        
         # Initialize Engine
         self.engine.start(output_callback=self.on_engine_output)
         self.last_ai_msg_index = None
@@ -139,6 +143,15 @@ class ChatApp(ctk.CTk):
             if models:
                 self.model_spinner.configure(values=models)
                 self.model_spinner.set(models[0])
+            
+            # If Auto Play is enabled, start simulation immediately
+            if auto_play:
+                model_name = self.model_spinner.get()
+                if model_name != "Select a model...":
+                    self.log_to_chat("System", "Auto Play sequence initiated...")
+                    threading.Thread(target=self.engine.run, args=(model_name, "Auto Start"), daemon=True).start()
+                else:
+                    self.log_to_chat("System", "Auto Play failed: No model selected.")
         except Exception as e:
             self.status_label.configure(text="Load Error", text_color="#F44336")
             self.log_to_chat("System", f"Error loading engine: {str(e)}")
@@ -150,6 +163,17 @@ class ChatApp(ctk.CTk):
         else:
             self.serper_key_entry.configure(state="disabled")
             self.serper_key_label.configure(text_color="gray")
+
+    def toggle_auto_play(self):
+        if self.auto_play_var.get():
+            self.user_input.configure(state="disabled")
+            self.send_button.configure(state="disabled")
+            self.user_input.configure(placeholder_text="Auto Play Mode - Input Disabled")
+        else:
+            self.user_input.configure(state="normal")
+            self.send_button.configure(state="normal")
+            self.user_input.configure(placeholder_text="Message AI...")
+            self.user_input.focus()
 
     def on_send(self):
         prompt = self.user_input.get().strip()

@@ -4,6 +4,7 @@ from sim.iris_prompt import IrisPrompt
 from sim.iris_memory import IrisMemory
 from sim.iris_search import IrisSearch
 from sim.iris_llm_api import IrisLlmApi
+from sim.iris_function import IrisFunction
 from log import Logger
 
 class IrisEngine:
@@ -12,6 +13,7 @@ class IrisEngine:
         self.iris_llm_api = IrisLlmApi()
         self.iris_memory = IrisMemory(db_path=f"../src/brain_db/[{self.id}]_brain")
         self.iris_search = IrisSearch()
+        self.iris_function = IrisFunction()
 
     def start(self, llm_requester):
         self.iris_memory.start()
@@ -23,7 +25,7 @@ class IrisEngine:
     def run(self, user_input, agent):
         # STEP 1: 기억 소환 (Retrieval) - [VIVID]/[FAINT] 태그 포함
         memories = self._retrieve_memory(agent, user_input)
-        Logger.log(f"[{self.id}] Memory", memories if memories else "연관된 기억 없음")
+        Logger.log_debug(f"[{self.id}] Memory", memories if memories else "연관된 기억 없음")
         
         # STEP 2: 프롬프트 구성 (Context Building)
         raw_matrix = agent.get_personality_matrix()
@@ -46,7 +48,6 @@ class IrisEngine:
         ]
 
         # STEP 3: 모델 호출 및 추론 (Inference)
-        # 아이리스가 고뇌(Internal Monologue)하고 대답을 생성합니다.
         response = self.iris_llm_api.request(context=context)
 
         content = ""
@@ -56,7 +57,7 @@ class IrisEngine:
             content = str(response)
 
         if not content:
-            Logger.log("Error", "LLM으로부터 유효한 응답 내용을 받지 못했습니다.")
+            Logger.log_debug("Error", "LLM으로부터 유효한 응답 내용을 받지 못했습니다.")
             return "인지 프로세스 중단..."
         
         # STEP 4: 결과 파싱 (Robust JSON Parsing)
@@ -68,15 +69,7 @@ class IrisEngine:
             new_memories = result.get('memories_to_save', []) # 새롭게 저장할 지식
             relationship_delta = result.get('relationship_delta', {}) # 이번 대화로 인한 관계 변화량
             
-            action_call = result.get('action_call', {}) # 이번 대화로 인한 행동
-            function_name = action_call.get('function')
-            if function_name == "move_to":
-                parameters = action_call.get('parameters', {})
-                reason = action_call.get('reason', None)
-                location = parameters.get('location', None)
-                if location:
-                    agent.current_location = location
-                    Logger.log("Location", f"{agent.name}이(가) {location}(으)로 이동했습니다. (이유: {reason})")
+            self.iris_function.process_action_call(result.get('action_call', {}), agent)
             
             # STEP 5: 상태 업데이트 및 저장
             # 1. 감정 매트릭스 수치 갱신
@@ -121,9 +114,6 @@ class IrisEngine:
         if match:
             return match.group(1).strip()
         return "UNKNOWN"
-
-    def set_memory_params(self, decay_rate=None, sim_threshold=None, vivid_threshold=None, imp_weight=None, impact_weight=None):
-        self.iris_memory.set_memory_params(decay_rate, sim_threshold, vivid_threshold, imp_weight, impact_weight)
 
     def update_personality_matrix(self, delta, agent):
         """매트릭스 수치 업데이트 및 경계값 고정(Clamping)"""

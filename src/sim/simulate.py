@@ -1,20 +1,23 @@
 import time
-from sim.mother import Mother
-from sim.iris import Iris
-from sim.rain import Rain
-from sim.lim import Lim
-from sim.god import God
+from sim.sim_agent.mother import Mother
+from sim.sim_agent.iris import Iris
+from sim.sim_agent.rain import Rain
+from sim.sim_agent.lim import Lim
+from sim.sim_agent.god import God
 from sim.iris_llm_api import IrisLlmApi
 from log import Logger
 
 class Simulator:
     def __init__(self):
-        self.iris = Iris()
-        self.mother = Mother()
-        self.rain = Rain()
+        self.sim_type = 1
 
         self.lim = Lim()
-        self.god = God()
+        if self.sim_type == 0:
+            self.iris = Iris()
+            self.mother = Mother()
+            self.rain = Rain()
+        elif self.sim_type == 1:
+            self.god = God()
 
         self.llm_requester = None
         self.output_callback = None
@@ -32,18 +35,23 @@ class Simulator:
     def start(self, llm_requester, output_callback=None):
         self.llm_requester = llm_requester
         self.output_callback = output_callback
-        self.iris.start(llm_requester=self.llm_requester)
-        self.mother.start(llm_requester=self.llm_requester)
-        self.rain.start(llm_requester=self.llm_requester)
-        self.god.start(llm_requester=self.llm_requester)
+
         self.lim.start(llm_requester=self.llm_requester)
+        if self.sim_type == 0:
+            self.iris.start(llm_requester=self.llm_requester)
+            self.mother.start(llm_requester=self.llm_requester)
+            self.rain.start(llm_requester=self.llm_requester)
+        elif self.sim_type == 1:
+            self.god.start(llm_requester=self.llm_requester)
     
     def stop(self):
-        self.iris.stop()
-        self.mother.stop()
-        self.rain.stop()
-        self.god.stop()
         self.lim.stop()
+        if self.sim_type == 0:
+            self.iris.stop()
+            self.mother.stop()
+            self.rain.stop()
+        elif self.sim_type == 1:
+            self.god.stop()
     
     def run(self, user_input):
         if self._auto_loop:
@@ -51,9 +59,6 @@ class Simulator:
         else:
             self._manual_run(user_input)
         return ""
-
-    def _manual_run(self, user_input):
-        return self.iris.run(user_input)
 
     def _get_speak_context(self, agnet, speak):
         return f"""
@@ -69,6 +74,7 @@ Content: "{speak}"
             debug_result = f"""
 [UserInput]\n{speak}\n
 [Current Location]\n{agent.get_current_location()}\n
+[Reason of change location]\n{agent.get_reason_of_change_location()}\n
 [Available Locations]\n{agent.get_available_locations()}\n
 [Refraction(Perception)]\n{res.get('subjective_perception')}\n
 [Visceral Impulse]\n{res.get('unconscious_impulse')}\n
@@ -80,8 +86,11 @@ Content: "{speak}"
 [Final Response]\n{res.get('final_response')}\n
 ==================\n
 """
+            reason_of_change_location = agent.get_reason_of_change_location()
+            reason_of_change_location = "" if reason_of_change_location is None else reason_of_change_location + "\n"
             result = f"""
 [{agent.name} @ {agent.get_current_location()}]\n
+{reason_of_change_location}
 ({res.get('subjective_perception')})\n
 {res.get('final_response')}\n
 [To: {res.get('target_name')}]\n
@@ -94,6 +103,9 @@ Content: "{speak}"
         target = res.get('target_name', "...")
         speak_context, _ = self._get_speak_context(agent, talk)
         return target, speak_context
+
+    def _manual_run(self, user_input):
+        self._request_agent_speak(self.lim, user_input)
     
     def _auto_run(self, user_input):
         target = ""
@@ -106,21 +118,25 @@ Content: "{speak}"
             Logger.log(f"\n--- Turn {i} ---")
 
             #===============================
-            # self.sim1(i)
-            self.sim2(i)
+            if self.sim_type == 0:
+                self.sim1(i)
+            elif self.sim_type == 1:
+                self.sim2(i)
             #===============================
                 
     def _get_agent(self, target):
-        if target == self.iris.name:
-            return self.iris
-        elif target == self.mother.name:
-            return self.mother
-        elif target == self.rain.name:
-            return self.rain
-        elif target == self.lim.name:
-            return self.lim
-        elif target == self.god.name:
-            return self.god
+        if self.sim_type == 0:
+            if target == self.iris.name:
+                return self.iris
+            elif target == self.mother.name:
+                return self.mother
+            elif target == self.rain.name:
+                return self.rain
+        elif self.sim_type == 1:
+            if target == self.lim.name:
+                return self.lim
+            elif target == self.god.name:
+                return self.god
         else:
             return None
 

@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer
 from log import Logger
 
 class IrisMemory:
-    def __init__(self, db_path="iris_brain_db", load_embed_model=True):
+    def __init__(self, db_path, load_embed_model=True):
         # 그래프 데이터베이스 및 연결 초기화
         self.db = kuzu.Database(db_path)
         self.conn = kuzu.Connection(self.db)

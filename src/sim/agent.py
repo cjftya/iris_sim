@@ -1,14 +1,20 @@
 from sim.iris_engine import IrisEngine
+from sim.vital import Vital
 
 class Agent:
     def __init__(self, name="UNKNOWN", identifier="UNKNOWN"):
         self.name = name
         self.identifier = identifier
-        self.available_participants = []
         self.llm_requester = None
         self.iris_engine = IrisEngine(self.name)
 
-        # 성격 매트릭스 (Personality Matrix)
+        # 생체 정보
+        self.vital = Vital()
+
+        # 참여 가능한 에이전트 정보
+        self.available_participants = []
+
+        # 성격 매트릭스
         # logic_emotion : 감성적인가 이성적인가
         # defensive_open : 방어적인가 개방적인가
         # fear_decisive : 공포에 우유부단한가 용감하고 단호한가
@@ -18,7 +24,8 @@ class Agent:
         self.relationship_map = {}
 
         # 공간 정보
-        self.current_location = ""
+        self.current_location = None
+        self.reason_of_change_location = None
         self.available_locations = []
 
     def start(self, llm_requester):
@@ -32,6 +39,13 @@ class Agent:
     def run(self, user_input):
         res = self.iris_engine.run(user_input, self)
         return res
+
+    def set_serper_api_key(self, api_key):
+        if self.iris_engine:
+            self.iris_engine.set_serper_api_key(api_key)
+
+    def support_web_search(self):
+        return False
 
     def get_personality_matrix(self):
         return None
@@ -54,9 +68,6 @@ class Agent:
 
         return "\n".join([f"- {name}: {score}" for name, score in self.relationship_map.items()])
 
-    def support_web_search(self):
-        return False
-
     def get_available_participants(self):
         return "\n".join([line for line in self.available_participants])
 
@@ -76,6 +87,9 @@ class Agent:
     def get_current_location(self):
         return self.current_location
 
+    def get_reason_of_change_location(self):
+        return self.reason_of_change_location
+
     def get_available_locations(self):
         return "\n".join([line for line in self.available_locations])
 
@@ -91,7 +105,3 @@ class Agent:
     def add_all_locations(self, locations):
         for location in locations:
             self.add_location(location)
-
-    def set_serper_api_key(self, api_key):
-        if self.iris_engine:
-            self.iris_engine.set_serper_api_key(api_key)

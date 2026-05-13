@@ -6,10 +6,8 @@ from log import Logger
 
 class IrisLlmApi:
     def __init__(self):
-        # gemini-3.1-flash-lite-preview limit (15 RPM)
         self.last_call_time = 0
         self.min_interval = 10
-
         self.llm_requester = None
 
     @staticmethod
