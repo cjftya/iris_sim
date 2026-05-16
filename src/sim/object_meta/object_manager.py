@@ -19,3 +19,18 @@ class ObjectManager:
     def remove_object(self, id):
         if id in self.objects:
             self.objects.pop(id)
+
+    def get_object_context(self, id):
+        obj = self.get_object(id)
+        if obj:
+            return f"- **{obj.name}** (id: {obj.id}) - (detail: {obj.detail})"
+        return ""
+
+    def get_objects_full_context(self):
+        if not self.objects:
+            return ""
+            
+        description_list = []
+        for obj in self.objects.values():
+            description_list.append(self.get_object_context(obj.id))
+        return "\n".join(description_list)

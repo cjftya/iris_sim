@@ -8,12 +8,12 @@ from sim.iris_function import IrisFunction
 from log import Logger
 
 class IrisEngine:
-    def __init__(self, id):
+    def __init__(self, id, world_context_manager):
         self.id = id
         self.iris_llm_api = IrisLlmApi()
         self.iris_memory = IrisMemory(db_path=f"../src/brain_db/[{self.id}]_brain")
         self.iris_search = IrisSearch()
-        self.iris_function = IrisFunction()
+        self.iris_function = IrisFunction(world_context_manager)
 
     def start(self, llm_requester):
         self.iris_memory.start()
@@ -23,8 +23,11 @@ class IrisEngine:
         self.iris_memory.stop()
 
     def run(self, user_input, agent):
+        # TODO: agent내부에 detector로 판단하게 수정
+        is_dialogue_mode = False
+
         # STEP 1: 기억 소환 (Retrieval) - [VIVID]/[FAINT] 태그 포함
-        memories = self._retrieve_memory(agent, user_input)
+        memories = self._retrieve_memory(agent, user_input) # TODO: 독백의 경우 변경되어야함
         Logger.log_debug(f"[{self.id}] Memory", memories if memories else "연관된 기억 없음")
         
         # STEP 2: 프롬프트 구성 (Context Building)
@@ -35,11 +38,15 @@ class IrisEngine:
             world_context=agent.get_world_context(),
             retrieved_memories=memories,
             response_style=agent.get_response_style(),
-            participants=agent.get_participant_delegate().get_available_participants(),
+            available_participants=agent.get_participant_delegate().get_available_participants(),
             intrinsic_desires=agent.get_intrinsic_desires(),
             relationships=agent.get_relationships(),
             current_location=agent.get_location_delegate().get_current_location(),
-            available_locations=agent.get_location_delegate().get_available_locations()
+            available_locations=agent.get_location_delegate().get_available_locations(),
+            available_agent_inventory=agent.get_inventory().get_objects_full_context(),
+            available_objects=agent.world_context_manager.object_manager.get_objects_full_context(),
+            available_tools=agent.get_available_tools(is_dialogue_mode),
+            is_dialogue_mode=is_dialogue_mode
         )
 
         context = [
@@ -68,7 +75,8 @@ class IrisEngine:
             state_delta = result.get('state_delta', {})    # 이번 대화로 인한 심리 변화량
             new_memories = result.get('memories_to_save', []) # 새롭게 저장할 지식
             relationship_delta = result.get('relationship_delta', {}) # 이번 대화로 인한 관계 변화량
-            
+        
+            # TODO: 세부 데이터 처리 예정
             self.iris_function.process_action_call(result.get('action_call', {}), agent)
             
             # STEP 5: 상태 업데이트 및 저장

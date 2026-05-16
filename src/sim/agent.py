@@ -3,18 +3,23 @@ from sim.agent_meta.participants_delegate import ParticipantsDelegate
 from sim.agent_meta.location_delegate import LocationDelegate
 from sim.agent_meta.vital_state import VitalState
 from sim.util.point import Point
-from sim.object_meta.object_manager import ObjectManager
+from sim.object_meta.object_detector import ObjectDetector
+from sim.object_meta.object_pack import ObjectPack
+from sim.world.world_context_manager import WorldContextManager
 from sim.util.globar_util import GlobarUtil
 
 class Agent:
-    def __init__(self, name="UNKNOWN", identifier="UNKNOWN"):
+    def __init__(self, name="UNKNOWN", identifier="UNKNOWN", world_context_manager: WorldContextManager=None):
         self.id = GlobarUtil.gen_agent_id()
         self.name = name
         self.identifier = identifier
 
+        # 월드 컨텍스트 매니져
+        self.world_context_manager = world_context_manager
+
         # 인지 엔진
         self.llm_requester = None
-        self.iris_engine = IrisEngine(self.name)
+        self.iris_engine = IrisEngine(self.name, self.world_context_manager)
 
         # 생체 정보
         self.vital_state = VitalState()
@@ -26,10 +31,14 @@ class Agent:
         self.location_delegate = LocationDelegate()
 
         # 인벤토리
-        self.inventory = ObjectManager()
+        self.inventory = ObjectPack()
 
         # 좌표
         self.position = Point()
+        self.direction = "S"  # 초기값: 남쪽 (N/S/E/W)
+        
+        # 시야 감지 엔진
+        self.object_detector = ObjectDetector()
 
         # 성격 매트릭스
         # logic_emotion : 감성적인가 이성적인가
@@ -93,3 +102,13 @@ class Agent:
 
     def get_inventory(self):
         return self.inventory
+
+    def get_available_tools(self, is_dialogue_mode):
+        if is_dialogue_mode:
+            return ["speak", "take", "give", "move_to", "search", "use", "rest", "none"]
+        else:
+            return ["take", "move_to", "search", "use", "rest", "none"]
+
+    def perceive_world(self, world_objects):
+        detected_entities = self.detection_engine.detect(self, world_objects)
+        return detected_entities

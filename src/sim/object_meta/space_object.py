@@ -2,5 +2,5 @@ from sim.object_meta.base_object import BaseObject
 from sim.object_meta.object_type import ObjectType
 
 class SpaceObject(BaseObject):
-    def __init__(self, id):
-        super().__init__(id, ObjectType.SPACE)
+    def __init__(self, name, detail=None):
+        super().__init__(name, detail, ObjectType.SPACE)
