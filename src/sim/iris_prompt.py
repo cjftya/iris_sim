@@ -53,7 +53,8 @@ class IrisPrompt:
                         current_location=None, available_locations=None,
                         available_objects=None, available_tools=None,
                         available_agent_inventory=None,
-                        is_dialogue_mode=False):
+                        is_dialogue_mode=False,
+                        vital_context=None):
         m = personality_matrix
         social_context = IrisPrompt.get_social_context(available_participants, relationships) if is_dialogue_mode else ""
         neural_loop_prompt = IrisPrompt.get_neural_loop_prompt(is_dialogue_mode)
@@ -76,6 +77,9 @@ class IrisPrompt:
 - **Identity & Worldview**: {persona_context} / {world_context}
 - **Intrinsic Desires**: {intrinsic_desires}
 - **Response Protocol (The Mask)**: {response_style}
+
+# 내 신체 상태 (Vital Status)
+{vital_context}
 
 # 공간 지각 (Spatial Awareness)
 너는 현재 특정 물리적/논리적 장소에 위치해 있으며, 환경의 변화에 따라 이동을 결정할 수 있다.

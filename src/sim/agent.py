@@ -63,6 +63,12 @@ class Agent:
         res = self.iris_engine.run(user_input, self)
         return res
 
+    def tick(self, time_scale):
+        # 신체 결핍 처리
+        self.vital_state.tick(time_scale)
+
+        # TODO: 이벤트 이미터에서 이미터된 이벤트 감지 및 처리
+
     def set_serper_api_key(self, api_key):
         if self.iris_engine:
             self.iris_engine.set_serper_api_key(api_key)
@@ -110,5 +116,5 @@ class Agent:
             return ["take", "move_to", "search", "use", "rest", "none"]
 
     def perceive_world(self, world_objects):
-        detected_entities = self.detection_engine.detect(self, world_objects)
+        detected_entities = self.object_detector.detect(self, world_objects)
         return detected_entities

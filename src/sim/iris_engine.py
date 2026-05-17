@@ -46,7 +46,8 @@ class IrisEngine:
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
             available_objects=agent.world_context_manager.object_manager.get_objects_full_context(),
             available_tools=agent.get_available_tools(is_dialogue_mode),
-            is_dialogue_mode=is_dialogue_mode
+            is_dialogue_mode=is_dialogue_mode,
+            vital_context=agent.get_vital_state().get_context()
         )
 
         context = [
