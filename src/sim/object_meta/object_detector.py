@@ -30,13 +30,21 @@ class ObjectDetector:
         return dynamic_range
 
     def detect_agents(self, agent, all_agents):
-        return self._detect_entities(agent, [a for a in all_agents if a.vital_state.is_alive])
+        agents_list = [a for a in all_agents if a.vital_state.is_alive]
+        if len(agents_list) == 1 and agent.id == agents_list[0].id:
+            return []
+
+        return self._detect_entities(agent, agents_list)
 
     def detect_objects(self, agent, world_objects):
-        return self._detect_entities(agent, [a for a in world_objects if a.type == ObjectType.ITEM])
+        objects_list = [o for o in world_objects if o.type == ObjectType.ITEM]
+        if len(objects_list) == 0:
+            return []
+
+        return self._detect_entities(agent, objects_list)
 
     def _detect_entities(self, agent, entities):
-        if len(entities) <= 1:
+        if len(entities) == 0:
             return []
 
         detected_list = []

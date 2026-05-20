@@ -1,8 +1,8 @@
 from sim.agent import Agent
 
 class Lim(Agent):
-    def __init__(self):
-        super().__init__("LIM", "HUMAN")
+    def __init__(self, world_context_manager=None):
+        super().__init__("LIM", "HUMAN", world_context_manager=world_context_manager)
         self.relationship_map = {"GOD": 0.0}
         
         self.location_delegate.set_current_location("2026년의 나의 방")

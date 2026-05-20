@@ -54,6 +54,7 @@ class IrisEngine:
             vital_context=agent.get_vital_state().get_context()
         )
 
+        context = []
         context.append({"role": "system", "content": system_prompt})
         context.append({"role": "user", "content": external_event})
 
@@ -87,6 +88,7 @@ class IrisEngine:
             vital_context=agent.get_vital_state().get_context()
         )
 
+        context = []
         context.append({"role": "system", "content": system_prompt})
         context.append({"role": "user", "content": external_event})
 
@@ -125,6 +127,7 @@ class IrisEngine:
             vital_context=agent.get_vital_state().get_context()
         )
 
+        context = []
         context.append({"role": "system", "content": system_prompt})
         context.append({"role": "user", "content": user_input})
 

@@ -1,3 +1,5 @@
+import random
+
 class EventType:
     NO_EVENT = 0
     WEATHER_CHANGE = 1
