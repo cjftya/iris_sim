@@ -4,7 +4,7 @@ from sim.world.world_object_creator import WorldObjectCreator
 from sim.world.weather_engine import WeatherEngine
 from sim.world.time_engine import TimeEngine
 from sim.sim_agent.lim import Lim
-from sim.world.event_trigger import EventTrigger, EventType
+from sim.world.event_trigger import EventTrigger, EventType, ThinkEventType
 
 class WorldContextManager:
     def __init__(self):
@@ -16,7 +16,6 @@ class WorldContextManager:
         self.event_trigger = EventTrigger()
 
         lim = Lim(world_context_manager=self)
-        lim.set_enable_thinking(True)
         self.agent_manager.add_agent(lim)
         self.agents = self.agent_manager.get_agents()
         
@@ -48,17 +47,20 @@ class WorldContextManager:
             event_type = obj[1]
             event_message = obj[2]
 
-            if event_type == EventType.WEATHER_CHANGE:
-                for agent in self.agents:
-                    agent.queue_event(event_type, event_message)
-            elif event_type == EventType.RANDOM_SCAN:
+            if event_type == EventType.FATIGUE_TRIPPED:
+                event_agent.push_think_event(ThinkEventType.FATIGUE, event_message, None)
+            
+            if event_type == EventType.HUNGER_TRIPPED:
+                event_agent.push_think_event(ThinkEventType.HUNGER, event_message, None)
+
+            if event_type == EventType.RANDOM_SCAN:
                 for agent in self.agents:
                     agent.scan(event_message)
 
-            if event_type == EventType.FATIGUE_TRIPPED or event_type == EventType.HUNGER_TRIPPED:
-                event_agent.queue_event(event_type, event_message)
+        for agent in self.agents:
+            agent.think_tick()
 
-    def get_context(self):
+    def get_state_context(self):
         return f"""\
 {self.time_engine.get_context()}\n
 {self.weather_engine.get_context()}"""

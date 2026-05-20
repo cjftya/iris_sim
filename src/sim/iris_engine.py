@@ -25,7 +25,7 @@ class IrisEngine:
     def stop(self):
         self.iris_memory.stop()
 
-    def event(self, agent, event_type, external_event):
+    def event(self, agent, event_type, external_event, available_tools=["none"]):
         available_participants = ParticipantsDelegate().get_available_participants()
 
         memories = "연관된 기억 없음"
@@ -49,9 +49,10 @@ class IrisEngine:
             available_locations=agent.get_location_delegate().get_available_locations(),
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
             available_objects=available_objects,
-            available_tools=agent.get_available_tools(False),
+            available_tools=available_tools,
             is_dialogue_mode=False,
-            vital_context=agent.get_vital_state().get_context()
+            vital_context=agent.get_vital_state().get_context(),
+            world_state_context=agent.world_context_manager.get_state_context()
         )
 
         context = []
@@ -60,7 +61,7 @@ class IrisEngine:
 
         return self._run_llm_core(context, agent)
 
-    def search(self, agent, external_event, detected_objects):
+    def search(self, agent, external_event, detected_objects, available_tools=["none"]):
         available_participants = ParticipantsDelegate().get_available_participants()
 
         memories = "연관된 기억 없음"
@@ -83,9 +84,10 @@ class IrisEngine:
             available_locations=agent.get_location_delegate().get_available_locations(),
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
             available_objects=available_objects,
-            available_tools=agent.get_available_tools(False),
+            available_tools=available_tools,
             is_dialogue_mode=False,
-            vital_context=agent.get_vital_state().get_context()
+            vital_context=agent.get_vital_state().get_context(),
+            world_state_context=agent.world_context_manager.get_state_context()
         )
 
         context = []
@@ -94,7 +96,7 @@ class IrisEngine:
 
         return self._run_llm_core(context, agent)
 
-    def speak(self, user_input, agent, available_agents, from_scan=False):
+    def speak(self, user_input, agent, available_agents, from_scan=False, available_tools=["none"]):
         names = [d.name for d in available_agents]
         participant_delegate = ParticipantsDelegate()
         participant_delegate.add_all_participants(names)
@@ -122,9 +124,10 @@ class IrisEngine:
             available_locations=agent.get_location_delegate().get_available_locations(),
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
             available_objects=available_objects,
-            available_tools=agent.get_available_tools(True),
+            available_tools=available_tools,
             is_dialogue_mode=True,
-            vital_context=agent.get_vital_state().get_context()
+            vital_context=agent.get_vital_state().get_context(),
+            world_state_context=agent.world_context_manager.get_state_context()
         )
 
         context = []
@@ -144,7 +147,7 @@ class IrisEngine:
 
         if not content:
             Logger.log_debug("Error", "LLM으로부터 유효한 응답 내용을 받지 못했습니다.")
-            return "인지 프로세스 중단...", None
+            return "인지 프로세스 중단..."
         
         result = self.iris_llm_api.parse_llm_response(content)
 
@@ -153,8 +156,7 @@ class IrisEngine:
             new_memories = result.get('memories_to_save', [])
             relationship_delta = result.get('relationship_delta', {})
         
-            # TODO: process_action_call 구현
-            action_data = self.iris_function.process_action_call(result.get('action_call', {}), agent)
+            self.iris_function.process_action_call(result.get('action_call', {}), agent)
             
             self.update_personality_matrix(state_delta, agent)
             
@@ -164,9 +166,9 @@ class IrisEngine:
             if relationship_delta:
                 self.update_relationship_delta(relationship_delta, agent)
 
-            return result, action_data
+            return result
 
-        return f"데이터 해석 실패:\n{response}", None
+        return f"데이터 해석 실패:\n{response}"
 
     def _retrieve_memory(self, agent, user_input):
         # 1. 매트릭스 기반 내부 감정 계산
@@ -216,6 +218,9 @@ class IrisEngine:
             agent.relationship_map[name] = round(new_score, 1)
         
         Logger.log_debug("Relationship Delta Updated", agent.get_relationships())
+
+    def perform_brain_cleanup(self):
+        self.iris_memory.perform_brain_cleanup()
 
     def set_serper_api_key(self, api_key):
         self.iris_search.set_serper_api_key(api_key)

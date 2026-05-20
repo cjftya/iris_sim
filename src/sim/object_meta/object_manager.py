@@ -20,9 +20,9 @@ class ObjectManager:
         for obj in objs:
             self.add_object(obj)
 
-    def remove_object(self, id):
-        if id in self.objects:
-            self.objects.pop(id)
+    def remove_object(self, obj):
+        if obj.id in self.objects:
+            self.objects.pop(obj.id)
 
     def clear_objects(self):
         self.objects.clear()
@@ -30,7 +30,7 @@ class ObjectManager:
     def get_object_context(self, id):
         obj = self.get_object(id)
         if obj:
-            return f"- **{obj.name}** (id: {obj.id}) - (detail: {obj.detail})"
+            return f"- [name: {obj.name}] - [id: {obj.id}]"
         return ""
 
     def get_objects_full_context(self):

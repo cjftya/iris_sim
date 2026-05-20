@@ -8,6 +8,7 @@ from sim.object_meta.object_detector import ObjectDetector
 from sim.object_meta.object_manager import ObjectManager
 from sim.world.world_context_manager import WorldContextManager
 from sim.util.globar_util import GlobarUtil
+from sim.world.event_trigger import ThinkEventType
 
 class Agent:
     def __init__(self, name="UNKNOWN", identifier="UNKNOWN", world_context_manager: WorldContextManager=None):
@@ -18,8 +19,8 @@ class Agent:
         # LLM 트리거
         self.enable_thinking = False
 
-        # Event 스택
-        self.event_queue = []
+        # Think Event 큐
+        self.think_event_queue = {}
 
         # 월드 컨텍스트 매니져
         self.world_context_manager = world_context_manager
@@ -58,9 +59,6 @@ class Agent:
         # 관계 정보
         self.relationship_map = {}
 
-        self.speak_name_from_agent = None
-        self.speak_msg_from_agent = None
-
     def start(self, llm_requester):
         self.llm_requester = llm_requester
         self.iris_engine.start(llm_requester)
@@ -68,56 +66,92 @@ class Agent:
     def stop(self):
         self.llm_requester = None
         self.iris_engine.stop()
-    
-    def queue_event(self, event_type, message):
-        self.event_queue.append((event_type, message))
-    
-    def event(self, event_type, external_event):
-        if not self.enable_thinking:
-            return None, None
 
-        return self.iris_engine.event(self, event_type, external_event)
-
-    def scan(self, external_event): 
-        if not self.enable_thinking:
-            return None, None
-
+    def scan(self, external_event):
         found_agents = self.perceive_agents()
         found_objects = self.perceive_objects()
         if len(found_agents) <= 0 and len(found_objects) <= 0:
-            return None, None
+            return
 
         if len(found_agents) > 0 and self.vital_state.fatigue < 70 and self.vital_state.health > 30:
             ran_num = self.personality_matrix['defensive_open'] + random.random()
             if ran_num >= 1.0:
-                res, action = self.iris_engine.speak(user_input="주변에 대화할만한 대상이 있다.", agent=self, available_agents=found_agents, from_scan=True)
-                return res, action
+                self.push_think_event(ThinkEventType.FIND_AGENT, external_event + " 주변에 대화할만한 대상이 있다.", found_agents)
 
         if len(found_objects) > 0:
-            res, action = self.iris_engine.search(user_input=external_event, agent=self, detected_objects=found_objects)
-            return res, action
+            self.push_think_event(ThinkEventType.FIND_ITEM, external_event + " 주위에 관심있는 사물이 있다.", found_objects)
 
-        return None, None
-
+    def push_think_event(self, think_event_type, message, data=None):
+        self.set_enable_thinking(True)
+        self.think_event_queue[think_event_type] = {"message":message, "data":data}
+    
     def tick(self, time_scale):
         self.vital_state.tick(time_scale)
 
-        if self.speak_name_from_agent is not None and self.speak_msg_from_agent is not None:
-            self.event_queue.clear()
-            user_input = f"[From {self.speak_name_from_agent}] : {self.speak_msg_from_agent}"
-            available_agent = self.world_context_manager.agent_manager.get_agent_by_name(self.speak_name_from_agent)
-            self.speak_name_from_agent = None
-            self.speak_msg_from_agent = None
-            res, action = self.iris_engine.speak(user_input=user_input, agent=self,available_agents=[available_agent], from_scan=False)
-            return res, action
+    def think_tick(self):
+        if not self.enable_thinking:
+            return None
 
+        # release think_state
+        self.set_enable_thinking(False)
+
+        # body signal
+        if any([event_type in self.think_event_queue.keys() for event_type in [ThinkEventType.FATIGUE, ThinkEventType.HUNGER]]):
+            event_type_list = [ThinkEventType.FATIGUE, ThinkEventType.HUNGER]
+            combined_signal = ""
+            for event_type in event_type_list:
+                if event_type in self.think_event_queue.keys():
+                    think_event = self.think_event_queue[event_type]
+                    think_event_message = think_event.get("message", "")
+                    think_event_data = think_event.get("data", None)
+                    combined_signal += f"{think_event_message}\n"
+
+            self.think_event_queue.clear()
+            res = self.iris_engine.event(agent=self, event_type=None, external_event=combined_signal, available_tools=self.get_available_tools(False))
+            return res
+
+        # find agent signal
+        if ThinkEventType.FIND_AGENT in self.think_event_queue.keys():
+            think_event = self.think_event_queue[ThinkEventType.FIND_AGENT]
+            think_event_message = think_event.get("message", "")
+            found_agents = think_event.get("data", None)
+
+            self.think_event_queue.clear()
+            res = self.iris_engine.speak(user_input=think_event_message, agent=self, available_agents=found_agents, from_scan=True, available_tools=available_tools)
+            return res
+
+        # find item signal
+        if ThinkEventType.FIND_ITEM in self.think_event_queue.keys():
+            think_event = self.think_event_queue[ThinkEventType.FIND_ITEM]
+            think_event_message = think_event.get("message", "")
+            found_objects = think_event.get("data", None)
+
+            self.think_event_queue.clear()
+            res = self.iris_engine.search(agent=self, external_event=think_event_message, detected_objects=found_objects, available_tools=self.get_available_tools(False))
+            return res
+        
+        # speak signal
+        if ThinkEventType.SPEAK in self.think_event_queue.keys():
+            think_event = self.think_event_queue[ThinkEventType.SPEAK]
+            think_event_message = think_event.get("message", "")
+            found_agent_name = think_event.get("data", None)
+            user_input = f"[From {found_agent_name}] : {think_event_message}"
+            available_agent = self.world_context_manager.agent_manager.get_agent_by_name(self.found_agent_name)
+
+            self.think_event_queue.clear()
+            res = self.iris_engine.speak(user_input=user_input, agent=self,available_agents=[available_agent], from_scan=False, available_tools=self.get_available_tools(True))
+            return res
+
+        # event signal
         combined_signal = ""
-        while self.event_queue:
-            event_type, event_message = self.event_queue.pop(0)
-            combined_signal += f"{event_message}\n"
-
-        res, action = self.event(None, combined_signal)
-        return res, action
+        for think_event_type, think_event in self.think_event_queue.items():
+            # 이벤트에 따라서 조합을 커스텀 할 수 있음
+            think_event_message = think_event.get("message", "")
+            combined_signal += f"{think_event_message}\n"
+        self.think_event_queue.clear()
+        res = self.iris_engine.event(agent=self, event_type=None, external_event=combined_signal, available_tools=self.get_available_tools(False))
+        return res
+        
 
     def set_serper_api_key(self, api_key):
         if self.iris_engine:
@@ -161,9 +195,9 @@ class Agent:
 
     def get_available_tools(self, is_dialogue_mode):
         if is_dialogue_mode:
-            return ["speak", "take", "give", "move_to", "search", "use", "rest", "none"]
+            return ["speak", "give", "none"]
         else:
-            return ["take", "move_to", "search", "use", "rest", "none"]
+            return ["take" "move_to", "search", "use", "rest", "none"]
 
     def perceive_agents(self):
         all_agents = self.world_context_manager.agent_manager.get_agents()
@@ -174,6 +208,9 @@ class Agent:
         world_objects = self.world_context_manager.object_manager.get_objects()
         detected_entities = self.object_detector.detect_objects(self, world_objects)
         return detected_entities
+    
+    def perform_brain_cleanup(self):
+        self.iris_engine.perform_brain_cleanup()
 
     def set_enable_thinking(self, enable):
         self.enable_thinking = enable

@@ -38,9 +38,6 @@ class ObjectDetector:
 
     def detect_objects(self, agent, world_objects):
         objects_list = [o for o in world_objects if o.type == ObjectType.ITEM]
-        if len(objects_list) == 0:
-            return []
-
         return self._detect_entities(agent, objects_list)
 
     def _detect_entities(self, agent, entities):

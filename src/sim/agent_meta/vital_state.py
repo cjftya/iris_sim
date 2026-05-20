@@ -19,6 +19,15 @@ class VitalState:
         # 사망 여부 플래그
         self.is_alive = True
 
+    def update_hunger(self, value):
+        self.hunger = min(self.max_hunger, self.hunger + value)
+
+    def update_fatigue(self, value):
+        self.fatigue = min(self.max_fatigue, self.fatigue + value)
+
+    def update_health(self, value):
+        self.health = min(self.max_health, self.health + value)
+
     def tick(self, time_scale=1.0):
         if not self.is_alive:
             return
