@@ -42,9 +42,11 @@ class EventTrigger:
         # 랜덤/주기적 외부 스캔 트리거
         if self.turns_since_last_thought >= 3 or random.random() < 0.1:
             self.turns_since_last_thought = 0
-            return event_pack.append([None, EventType.RANDOM_SCAN, "[EXTERNAL_SIGNAL: 환경 스캔] 주변 환경을 확인하라."])
+            event_pack.append([None, EventType.RANDOM_SCAN, "[EXTERNAL_SIGNAL: 환경 스캔] 주변 환경을 확인하라."])
+            return event_pack
 
-        return event_pack.append([None, EventType.NO_EVENT, None])
+        event_pack.append([None, EventType.NO_EVENT, "..."])
+        return event_pack
 
 
                 
