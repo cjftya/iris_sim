@@ -30,7 +30,7 @@ class ObjectManager:
     def get_object_context(self, id):
         obj = self.get_object(id)
         if obj:
-            return f"- [name: {obj.name}] - [id: {obj.id}]"
+            return f"- [name: {obj.name}] - [object_id: {obj.id}]"
         return ""
 
     def get_objects_full_context(self):

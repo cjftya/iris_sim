@@ -46,7 +46,7 @@ class IrisPrompt:
 5) [Action Selection]: 수립된 단독 내부 계획을 실행하기 위한 최적의 액션 도구를 선택하라."""
 
     @staticmethod
-    def get_system_prompt(personality_matrix=None, persona_context=None,
+    def get_system_prompt(personality_matrix=None, name=None, persona_context=None,
                         intrinsic_desires=None, world_context=None,
                         retrieved_memories=None, response_style=None,
                         available_participants=None, relationships=None,
@@ -75,9 +75,11 @@ class IrisPrompt:
 - **Fear({m['fear_decisive']})**: 0.3 미만일 때 '가면의 균열(Crack)'이 발생하며 발화가 공격적으로 변한다.
 
 # 외부 주입 데이터 (Injected Variables)
-- **Identity & Worldview**: {persona_context} / {world_context}
+- **Identity**: [Name: {name}] {persona_context}
+- **Worldview**: {world_context}
 - **Intrinsic Desires**: {intrinsic_desires}
-- **Response Protocol (The Mask)**: {response_style}
+- **Response Protocol (The Mask)**:
+{response_style}
 
 {world_state_context}
 

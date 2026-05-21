@@ -40,7 +40,7 @@ class ChatApp(ctk.CTk):
         self.serper_key_entry.grid(row=4, column=0, padx=20, pady=(5, 10), sticky="ew")
 
         # Web Search Support
-        self.web_search_var = ctk.BooleanVar(value=True)
+        self.web_search_var = ctk.BooleanVar(value=False)
         self.web_search_check = ctk.CTkCheckBox(
             self.sidebar_frame, 
             text="Support Web Search", 

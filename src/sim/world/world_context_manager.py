@@ -1,3 +1,5 @@
+import time
+from sim.iris_llm_api import IrisLlmApi
 from sim.object_meta.object_manager import ObjectManager
 from sim.agent_meta.agent_manager import AgentManager
 from sim.world.world_object_creator import WorldObjectCreator
@@ -41,6 +43,8 @@ class WorldContextManager:
         self.object_manager.clear_objects()
 
     def tick(self):
+        time.sleep(1)
+
         self.time_engine.tick()
         self.weather_engine.tick(self.time_engine.time_scale, self.time_engine.season)
 
@@ -48,6 +52,7 @@ class WorldContextManager:
             agent.tick(self.time_engine.time_scale)
 
         event_objects = self.event_trigger.check_triggers(self.agents, self.weather_engine.weather)
+        
         for obj in event_objects:
             event_agent = obj[0]
             event_type = obj[1]
@@ -63,8 +68,10 @@ class WorldContextManager:
                 for agent in self.agents:
                     agent.scan(event_message)
 
-        for agent in self.agents:
-            agent.think_tick()
+        for agent in self.agents: 
+            result = agent.think_tick()
+            if result:
+                time.sleep(IrisLlmApi.get_loop_delay())
 
     def get_state_context(self):
         return f"""\

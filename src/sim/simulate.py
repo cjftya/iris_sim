@@ -16,8 +16,6 @@ class Simulator:
 
         self.world_context_manager = WorldContextManager()
 
-        self._turns = 200
-
     def start(self, llm_requester, output_callback=None):
         self.llm_requester = llm_requester
         self.output_callback = output_callback
@@ -39,17 +37,13 @@ class Simulator:
         pass
     
     def _auto_run(self, user_input):
-        for i in range(self._turns):
+        while True:
             if self._interupt:
-                Logger.log(f"종료. (Turn {i})")
+                Logger.log(f"종료.")
                 break
-
-            Logger.log(f"\n--- Turn {i} ---")
 
             #===============================
             self.world_context_manager.tick()
-
-            time.sleep(IrisLlmApi.get_loop_delay())
             #===============================
 
     def set_serper_api_key(self, api_key):

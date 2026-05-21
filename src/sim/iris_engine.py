@@ -30,32 +30,14 @@ class IrisEngine:
     def event(self, agent, event_type, external_event, available_tools=["none"]):
         available_participants = ParticipantsDelegate().get_available_participants()
 
-        memories = self._retrieve_memory(agent, external_event)
-
         detected_objects = agent.perceive_objects()
         object_manager = ObjectManager()
         object_manager.add_objects(detected_objects)
         available_objects = object_manager.get_objects_full_context()
 
-        raw_matrix = agent.get_personality_matrix()
-        system_prompt = IrisPrompt.get_system_prompt(
-            personality_matrix=raw_matrix,
-            persona_context=agent.get_persona_context(),
-            world_context=agent.get_world_context(),
-            retrieved_memories=memories,
-            response_style=agent.get_response_style(),
-            available_participants=available_participants,
-            intrinsic_desires=agent.get_intrinsic_desires(),
-            relationships=agent.get_relationships(),
-            current_location=agent.get_location_delegate().get_current_location(),
-            available_locations=agent.get_location_delegate().get_available_locations(),
-            available_agent_inventory=agent.get_inventory().get_objects_full_context(),
-            available_objects=available_objects,
-            available_tools=available_tools,
-            is_dialogue_mode=False,
-            vital_context=agent.get_vital_state().get_context(),
-            world_state_context=agent.world_context_manager.get_state_context()
-        )
+        memories = self._retrieve_memory(agent, external_event)
+
+        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tools, False, memories)
 
         context = []
         context.append({"role": "system", "content": system_prompt})
@@ -66,31 +48,14 @@ class IrisEngine:
     def search(self, agent, external_event, detected_objects, available_tools=["none"]):
         available_participants = ParticipantsDelegate().get_available_participants()
 
-        memories = self._retrieve_memory(agent, external_event)
-
         object_manager = ObjectManager()
         object_manager.add_objects(detected_objects)
         available_objects = object_manager.get_objects_full_context()
 
-        raw_matrix = agent.get_personality_matrix()
-        system_prompt = IrisPrompt.get_system_prompt(
-            personality_matrix=raw_matrix,
-            persona_context=agent.get_persona_context(),
-            world_context=agent.get_world_context(),
-            retrieved_memories=memories,
-            response_style=agent.get_response_style(),
-            available_participants=available_participants,
-            intrinsic_desires=agent.get_intrinsic_desires(),
-            relationships=agent.get_relationships(),
-            current_location=agent.get_location_delegate().get_current_location(),
-            available_locations=agent.get_location_delegate().get_available_locations(),
-            available_agent_inventory=agent.get_inventory().get_objects_full_context(),
-            available_objects=available_objects,
-            available_tools=available_tools,
-            is_dialogue_mode=False,
-            vital_context=agent.get_vital_state().get_context(),
-            world_state_context=agent.world_context_manager.get_state_context()
-        )
+        memories = self._retrieve_memory(agent, external_event)
+
+        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tools, False, memories)
+        print(system_prompt)
 
         context = []
         context.append({"role": "system", "content": system_prompt})
@@ -104,17 +69,26 @@ class IrisEngine:
         participant_delegate.add_all_participants(names)
         available_participants = participant_delegate.get_available_participants()
 
-        memories = None if from_scan else self._retrieve_memory(agent, user_input)
-        Logger.log_debug(f"[{self.id}] Memory", memories if memories else "연관된 기억 없음")
-
         detected_objects = agent.perceive_objects()
         object_manager = ObjectManager()
         object_manager.add_objects(detected_objects)
         available_objects = object_manager.get_objects_full_context()
 
+        memories = None if from_scan else self._retrieve_memory(agent, user_input)
+
+        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tools, True, memories)
+
+        context = []
+        context.append({"role": "system", "content": system_prompt})
+        context.append({"role": "user", "content": user_input})
+
+        return self._run_llm_core(context, agent)
+
+    def _get_system_context(self, agent, available_participants, available_objects, available_tools, is_dialogue_mode, memories=None):
         raw_matrix = agent.get_personality_matrix()
-        system_prompt = IrisPrompt.get_system_prompt(
+        return IrisPrompt.get_system_prompt(
             personality_matrix=raw_matrix,
+            name=agent.name,
             persona_context=agent.get_persona_context(),
             world_context=agent.get_world_context(),
             retrieved_memories=memories,
@@ -123,20 +97,14 @@ class IrisEngine:
             intrinsic_desires=agent.get_intrinsic_desires(),
             relationships=agent.get_relationships(),
             current_location=agent.get_location_delegate().get_current_location(),
-            available_locations=agent.get_location_delegate().get_available_locations(),
+            available_locations=agent.get_location_delegate().get_available_locations(context_format=True),
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
             available_objects=available_objects,
             available_tools=available_tools,
-            is_dialogue_mode=True,
+            is_dialogue_mode=is_dialogue_mode,
             vital_context=agent.get_vital_state().get_context(),
             world_state_context=agent.world_context_manager.get_state_context()
         )
-
-        context = []
-        context.append({"role": "system", "content": system_prompt})
-        context.append({"role": "user", "content": user_input})
-
-        return self._run_llm_core(context, agent)
 
     def _run_llm_core(self, context, agent: "Agent"):
         response = self.iris_llm_api.request(context=context)
@@ -194,7 +162,9 @@ class IrisEngine:
         combined_valence = (internal_valence * 0.4 + rel_valence * 0.6) * damping_factor
         current_valence = round(combined_valence, 2)
 
-        return self.iris_memory.retrieve_memory(user_input, current_valence, top_k=3)
+        memories = self.iris_memory.retrieve_memory(user_input, current_valence, top_k=3)
+        memories = memories if len(memories) > 0 else "연관된 기억 없음"
+        return memories
 
     def _extract_sender_name(self, text):
         match = re.search(r"\[EXTERNAL_SIGNAL:\s*([^\]]+)\]", text)

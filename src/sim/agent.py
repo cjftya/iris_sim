@@ -77,7 +77,7 @@ class Agent:
         if len(found_agents) > 0 and self.vital_state.fatigue < 70 and self.vital_state.health > 30:
             ran_num = self.personality_matrix['defensive_open'] + random.random()
             if ran_num >= 1.0:
-                self.push_think_event(ThinkEventType.FIND_AGENT, external_event + " 주변에 대화할만한 대상이 있다.", found_agents)
+                self.push_think_event(ThinkEventType.FIND_AGENT, external_event + " 주변에 대화할 만한 대상이 있다.", found_agents)
 
         if len(found_objects) > 0:
             self.push_think_event(ThinkEventType.FIND_ITEM, external_event + " 주위에 관심있는 사물이 있다.", found_objects)
@@ -126,6 +126,7 @@ class Agent:
             think_event = self.think_event_queue[ThinkEventType.FIND_ITEM]
             think_event_message = think_event.get("message", "")
             found_objects = think_event.get("data", None)
+            print(think_event_message + " " + str(len(found_objects)))
 
             self.think_event_queue.clear()
             res = self.iris_engine.search(agent=self, external_event=think_event_message, detected_objects=found_objects, available_tools=self.get_available_tools(False))
@@ -180,7 +181,9 @@ class Agent:
         if not self.relationship_map:
             return "식별된 관계 데이터가 없음."
 
-        return "\n".join([f"- {name}: {score}" for name, score in self.relationship_map.items()])
+        # 중괄호{} 내부에 이름: 점수 형태로 인라인 조인
+        pairs = [f"{name}: {score}" for name, score in self.relationship_map.items()]
+        return f"{{{', '.join(pairs)}}}"
 
     def get_location_delegate(self):
         return self.location_delegate

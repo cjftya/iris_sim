@@ -35,7 +35,7 @@ class VitalState:
         # 1. 시간 경과에 따른 피로도 및 허기 증가
         # min()을 사용해 max_value를 넘지 않도록 제한
         self.fatigue = min(self.max_fatigue, self.fatigue + (1.0 * time_scale))
-        self.hunger = min(self.max_hunger, self.hunger + (1.5 * time_scale))
+        self.hunger = min(self.max_hunger, self.hunger + (4.0 * time_scale))
 
         # 2. 상태 상호작용 (패널티 적용)
         # 배가 고프거나 너무 지치면 건강(health)이 깎임
