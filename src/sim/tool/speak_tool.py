@@ -10,7 +10,7 @@ class SpeakTool(BaseTool):
         return "주관적 의도 전달 및 소통."
 
     def get_params(self):
-        return '{"agent_name": "Available Participants 중 한명", "message": "대화할 내용}'
+        return '{"agent_name": "Available Participants 중 한명", "message": "대화할 내용"}'
 
     def execute(self, params, agent, world_system_manager):
         target_agent_name = params.get('agent_name')
