@@ -77,18 +77,24 @@ class MapEngine:
         # 그 다음 맵의 내부를 size에 맞게 그린다
         for y in range(self.map_data.h + 1):
             map_context += "# "
+            # 사용된 좌표를 체크한다
+            used_xy = []
             for x in range(self.map_data.w + 1):
                 # 만약 agents나 objects가 있다면 해당 위치에 그린다
                 if x < self.map_data.w:
                     skip_ground = False
                     for agent in self.map_data.agents:
-                        if agent[3] == x and agent[4] == y:
+                        if agent[3] == x and agent[4] == y and (x, y) not in used_xy:
                             map_context += agent[0] + " "
                             skip_ground = True
+                            used_xy.append((x, y))
+
                     for obj in self.map_data.objects:
-                        if obj[3] == x and obj[4] == y:
+                        if obj[3] == x and obj[4] == y and (x, y) not in used_xy:
                             map_context += obj[0] + " "
                             skip_ground = True
+                            used_xy.append((x, y))
+
                     if not skip_ground:
                         map_context += ". "
                 else:

@@ -297,6 +297,9 @@ class ChatApp(ctk.CTk):
         textbox.grid(row=1, column=0, padx=5, pady=0, sticky="nsew")
         textbox.configure(state="disabled")
         
+        # Bind Ctrl + MouseWheel to zoom font size
+        textbox.bind("<Control-MouseWheel>", lambda event, tb=textbox: self.on_zoom(event, tb))
+        
         # Horizontal scrollbar linked to textbox
         h_scrollbar = ctk.CTkScrollbar(frame, orientation="horizontal", height=12)
         h_scrollbar.grid(row=2, column=0, padx=5, pady=(2, 5), sticky="ew")
@@ -305,6 +308,22 @@ class ChatApp(ctk.CTk):
         textbox._textbox.configure(xscrollcommand=h_scrollbar.set)
         
         return textbox
+
+    def on_zoom(self, event, textbox):
+        font = textbox.cget("font")
+        if not font:
+            return "break"
+        
+        current_size = font.cget("size")
+        if event.delta > 0:
+            new_size = current_size + 1
+        else:
+            new_size = current_size - 1
+            
+        if 8 <= new_size <= 45:
+            font.configure(size=new_size)
+            
+        return "break"
 
     def _update_text_view(self, textbox, text, scroll_to_end=False):
         if text is None:
