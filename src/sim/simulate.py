@@ -49,6 +49,7 @@ class Simulator:
         )
 
     def stop(self):
+        self._interupt = True
         self.world_context_manager.stop()
         self.llm_requester = None
         
