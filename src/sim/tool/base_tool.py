@@ -3,7 +3,7 @@ class BaseTool:
         self.name = name
         self.tool_type = tool_type
         
-    def execute(self, agent, world_system_manager):
+    def execute(self, params, agent, world_system_manager):
         pass
 
     def get_name(self):
