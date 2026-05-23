@@ -17,6 +17,8 @@ class MapEngine:
         item_key = 'a'
         agent_key = 'A'
 
+        # TODO: 버그수정
+
         # 모든 공간 로드
         spaces = self.world_context_manager.object_manager.get_objects_by_type(ObjectType.SPACE)
         for space in spaces:

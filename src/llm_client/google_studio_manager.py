@@ -6,9 +6,12 @@ class GoogleStudioManager(BaseClient):
     def __init__(self):
         self._api_key = None
         self.__model_name = "gemini-3.1-flash-lite"
+        self.client = None
 
     def set_api_key(self, api_key):
         self._api_key = api_key
+        if self._api_key:
+            self.client = genai.Client(api_key=self._api_key)
 
     def get_options(self):
         return {
@@ -28,7 +31,12 @@ class GoogleStudioManager(BaseClient):
         return 1048576
 
     def request(self, context, model=None, options=None, chunk_callback=None):
-        client = genai.Client(api_key=self._api_key)
+        if not self.client and self._api_key:
+            self.client = genai.Client(api_key=self._api_key)
+            
+        if not self.client:
+            return {"message": {"content": "Error: API Key is not set or client initialization failed."}, "prompt_eval_count": 0, "eval_count": 0}
+
         target_model = model if model else self.__model_name
 
         system_instruction = None
@@ -41,7 +49,6 @@ class GoogleStudioManager(BaseClient):
                 if role == "system":
                     system_instruction = text
                 else:
-                    # 'assistant' 역할을 'model'로 정확히 매핑
                     contents.append({
                         "role": "model" if role == "assistant" else "user",
                         "parts": [{"text": text}]
@@ -61,7 +68,7 @@ class GoogleStudioManager(BaseClient):
                 response_mime_type="application/json"
             )
 
-            response_stream = client.models.generate_content_stream(
+            response_stream = self.client.models.generate_content_stream(
                 model=target_model,
                 contents=contents,
                 config=config
