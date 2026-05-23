@@ -27,7 +27,7 @@ class JellyEngine:
     def stop(self):
         self.core_memory.stop()
 
-    def event(self, agent, event_type, external_event, available_tools=["none"]):
+    def event(self, agent, event_type, external_event, available_tool_types):
         available_participants = ParticipantsDelegate().get_available_participants()
 
         detected_objects = agent.perceive_objects()
@@ -37,7 +37,7 @@ class JellyEngine:
 
         memories = self._retrieve_memory(agent, external_event)
 
-        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tools, False, memories)
+        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tool_types, False, memories)
 
         context = []
         context.append({"role": "system", "content": system_prompt})
@@ -45,7 +45,7 @@ class JellyEngine:
 
         return self._run_llm_core(context, agent)
 
-    def search(self, agent, external_event, detected_objects, available_tools=["none"]):
+    def search(self, agent, external_event, detected_objects, available_tool_types):
         available_participants = ParticipantsDelegate().get_available_participants()
 
         object_manager = ObjectManager()
@@ -54,7 +54,7 @@ class JellyEngine:
 
         memories = self._retrieve_memory(agent, external_event)
 
-        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tools, False, memories)
+        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tool_types, False, memories)
 
         context = []
         context.append({"role": "system", "content": system_prompt})
@@ -62,7 +62,7 @@ class JellyEngine:
 
         return self._run_llm_core(context, agent)
 
-    def speak(self, user_input, agent, available_agents, from_scan=False, available_tools=["none"]):
+    def speak(self, user_input, agent, available_agents, from_scan=False, available_tool_types=None):
         names = [d.name for d in available_agents]
         participant_delegate = ParticipantsDelegate()
         participant_delegate.add_all_participants(names)
@@ -75,7 +75,7 @@ class JellyEngine:
 
         memories = None if from_scan else self._retrieve_memory(agent, user_input)
 
-        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tools, True, memories)
+        system_prompt = self._get_system_context(agent, available_participants, available_objects, available_tool_types, True, memories)
 
         context = []
         context.append({"role": "system", "content": system_prompt})
@@ -83,7 +83,7 @@ class JellyEngine:
 
         return self._run_llm_core(context, agent)
 
-    def _get_system_context(self, agent, available_participants, available_objects, available_tools, is_dialogue_mode, memories=None):
+    def _get_system_context(self, agent, available_participants, available_objects, available_tool_types, is_dialogue_mode, memories=None):
         raw_matrix = agent.get_personality_matrix()
         return JellyPrompt.get_system_prompt(
             personality_matrix=raw_matrix,
@@ -99,7 +99,7 @@ class JellyEngine:
             available_locations=agent.get_location_delegate().get_available_locations(context_format=True),
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
             available_objects=available_objects,
-            available_tools=available_tools,
+            available_tools=agent.world_system_manager.tool_manager.get_tools_manual(available_tool_types),
             is_dialogue_mode=is_dialogue_mode,
             vital_context=agent.get_vital_state().get_context(),
             world_state_context=agent.world_system_manager.get_state_context()

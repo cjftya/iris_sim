@@ -11,6 +11,7 @@ from sim.util.object_detector import ObjectDetector
 from sim.util.object_manager import ObjectManager
 from sim.util.global_util import GlobalUtil
 from sim.util.point import Point
+from sim.tool.tool_type import ToolType
 
 class Agent:
     def __init__(self, name="UNKNOWN", identifier="UNKNOWN", world_system_manager: "WorldSystemManager"=None):
@@ -128,7 +129,7 @@ class Agent:
             found_agents = think_event.get("data", None)
 
             self.think_event_queue.clear()
-            res = self.engine.speak(user_input=think_event_message, agent=self, available_agents=found_agents, from_scan=True, available_tools=self.get_available_tools(True))
+            res = self.engine.speak(user_input=think_event_message, agent=self, available_agents=found_agents, from_scan=True, available_tool_types=self.get_available_tool_types(True))
             return res
 
         # find item signal
@@ -139,7 +140,7 @@ class Agent:
             print(think_event_message + " " + str(len(found_objects)))
 
             self.think_event_queue.clear()
-            res = self.engine.search(agent=self, external_event=think_event_message, detected_objects=found_objects, available_tools=self.get_available_tools(False))
+            res = self.engine.search(agent=self, external_event=think_event_message, detected_objects=found_objects, available_tool_types=self.get_available_tool_types(False))
             return res
         
         # speak signal
@@ -151,7 +152,7 @@ class Agent:
             available_agent = self.world_system_manager.agent_manager.get_agent_by_name(found_agent_name)
 
             self.think_event_queue.clear()
-            res = self.engine.speak(user_input=user_input, agent=self, available_agents=[available_agent], from_scan=False, available_tools=self.get_available_tools(True))
+            res = self.engine.speak(user_input=user_input, agent=self, available_agents=[available_agent], from_scan=False, available_tool_types=self.get_available_tool_types(True))
             return res
 
         # event signal
@@ -261,11 +262,11 @@ class Agent:
     def get_inventory(self):
         return self.inventory
 
-    def get_available_tools(self, is_dialogue_mode):
+    def get_available_tool_types(self, is_dialogue_mode):
         if is_dialogue_mode:
-            return ["speak", "give", "none"]
+            return [ToolType.SPEAK, ToolType.GIVE, ToolType.NONE]
         else:
-            return ["take", "move_to", "inspect", "use", "rest", "none"]
+            return [ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, ToolType.USE, ToolType.REST, ToolType.NONE]
 
     def perceive_agents(self):
         all_agents = self.world_system_manager.agent_manager.get_agents()

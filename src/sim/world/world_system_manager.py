@@ -2,6 +2,7 @@ import time
 from sim.core.jelly_llm_api import JellyLlmApi
 from sim.util.object_manager import ObjectManager
 from sim.util.agent_manager import AgentManager
+from sim.util.tool_manager import ToolManager
 from sim.agents.lim import Lim
 from sim.world.event_trigger import EventTrigger, EventType, ThinkEventType
 from sim.world.world_view_manager import WorldViewManager
@@ -26,6 +27,8 @@ class WorldSystemManager:
         self.event_trigger = EventTrigger()
         self.map_engine = MapEngine(self)
         self.world_view_manager = WorldViewManager(self)
+
+        self.tool_manager = ToolManager()
 
         lim = Lim(world_system_manager=self)
         self.agent_manager.add_agent(lim)

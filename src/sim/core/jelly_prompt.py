@@ -1,23 +1,6 @@
 class JellyPrompt:
 
     @staticmethod
-    def get_tool_manual_context(is_dialogue_mode, available_tools):
-        tool_manuals = {
-        "none": "- **none**: 파라미터 없음. 아무 행동도 하지 않고 대기.",
-        "move_to": "- **move_to**: {\"location\": \"Available Locations 중 하나\"} - 공간적 위치(좌표)를 다른 구역으로 이동.",
-        "inspect": "- **inspect**: {\"object_id\": \"Available Objects 중 하나\"} - 내 눈앞에 식별된 특정 사물이 '무엇'인지 전혀 모르거나 궁금할때 사용.",
-        "use": "- **use**: {\"object_id\": \"Available Objects 중 하나\"} - 음식물을 먹어서 허기를 보충하거나, 거울을 보고 노트북을 조작하는 등 사물의 고유 기능과 서사적 상호작용을 '직접 실행'.",
-        "speak": "- **speak**: {\"agent_name\": \"Available Participants 중 한명\", \"message\": \"대화할 내용\"} - 주관적 의도 전달 및 소통.",
-        "take": "- **take**: {\"object_id\": \"Available Objects 중 하나\"} - 바닥이나 구역에 놓인 물체를 내 소유(인벤토리)로 획득.",
-        "give": "- **give**: {\"agent_name\": \"Available Participants 중 한명\", \"object_id\": \"My Inventory Objects 중 하나\"} - 내가 소지한 물건을 다른 에이전트에게 양도.",
-        "rest": "- **rest**: 파라미터 없음. 안전하게 휴식을 취하여 피로도를 대폭 감소시키고 복잡한 인지 메모리를 정리함."
-        }
-        tools_context = []
-        for tool in available_tools:
-            tools_context.append(tool_manuals[tool])
-        return "\n".join(tools_context)
-
-    @staticmethod
     def get_social_context(available_participants, relationships):
         return f"""\
 # 다자간 사회적 인지 (Social Context)
@@ -59,7 +42,6 @@ class JellyPrompt:
         m = personality_matrix
         social_context = JellyPrompt.get_social_context(available_participants, relationships) if is_dialogue_mode else ""
         neural_loop_prompt = JellyPrompt.get_neural_loop_prompt(is_dialogue_mode)
-        tool_manual_context = JellyPrompt.get_tool_manual_context(is_dialogue_mode, available_tools)
 
         subjective_desc = "상대(Target) 선정 이유와 Matrix에 의해 오염된 주관적 해석" if is_dialogue_mode else "Matrix에 의해 오염된 주변 환경 및 자극에 대한 주관적 해석"
         internal_strategy = "가면 유지 및 균열 노출 수위와 대화 목적 수립" if is_dialogue_mode else "단독 행동 계획 및 생존 의도 수립"
@@ -116,7 +98,7 @@ class JellyPrompt:
 
 # 실행 가능한 액션 도구 (Available Action Tools)
 상황에 따라 다음 중 하나의 도구를 반드시 선택하여 파라미터를 채워라:
-{tool_manual_context}
+{available_tools}
 
 # 출력 규칙 (Strict JSON Only - 마크다운 태그 기호 없이 오직 순수 JSON 데이터만 출력하라)
 {{
