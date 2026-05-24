@@ -4,12 +4,20 @@ from sim.objects.item_object import ItemObject
 from sim.object_meta.object_type import ObjectType, ObjectDetailType
 from sim.world.world_data.world_builder import WorldBuilder
 from sim.world.world_data.world_type import WorldType
+from sim.world.weather_engine import WeatherEngine, WeatherType
+from sim.world.time_engine import TimeEngine
 from sim.agents.castaway import Castaway
 
 class CastAwayWorldBuilder(WorldBuilder):
 
     def __init__(self):
         super().__init__(WorldType.CAST_AWAY_SIM)
+
+    def _create_weather_engine(self):
+        return WeatherEngine(weather_type=WeatherType.CLEAR, remaining_hours=3)
+
+    def _create_time_engine(self):
+        return TimeEngine(start_year=3045, start_month=6, start_day=24, start_hour=6)
 
     def _create_agents(self, world_system_manager):
         castaway = Castaway(world_system_manager=world_system_manager)
@@ -56,10 +64,12 @@ class CastAwayWorldBuilder(WorldBuilder):
         # 생존용 기본 식료품 야생 자원 임시 배치
         sea_water = ItemObject(name="코코넛 열매", detail="나무에서 떨어져 뒹구는 즙이 가득한 열매. 수분과 허기를 채워준다.", detail_type=ObjectDetailType.DRINK, parent=camp)
         sea_water.set_pos(2, 2)
+        sea_water.set_nutri(15)
         self._add_object(sea_water)
 
         dried_fish = ItemObject(name="말린 생선 조각", detail="바위 위에 널어두어 수분이 완전히 날아간 훈제 생선 포.", detail_type=ObjectDetailType.FOOD, parent=camp)
         dried_fish.set_pos(5, 4)
+        dried_fish.set_nutri(25)
         self._add_object(dried_fish)
 
 

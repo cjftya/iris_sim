@@ -10,6 +10,7 @@ class ItemObject(BaseObject):
         self.states = []
         self.state_details = {}
         self.current_state_idx = 0
+        self.nutrition_value = 0
 
     def use(self):
         if self.detail_type in [ObjectDetailType.FOOD, ObjectDetailType.DRINK]:
@@ -20,6 +21,9 @@ class ItemObject(BaseObject):
             return self.detail_type, False
 
         return self.detail_type, False
+
+    def set_nutri(self, nutrition_value):
+        self.nutrition_value = nutrition_value
 
     def set_state_machine(self, states, state_details):
         """사물의 가용 상태 흐름과 상태별 세부 묘사를 정의합니다."""

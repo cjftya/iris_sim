@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from sim.world.world_system_manager import WorldSystemManager
 from sim.world.event_trigger import ThinkEventType
+from sim.world.weather_engine import WeatherType
+from sim.world.time_engine import DayCycleType, SeasonType
 from sim.util.object_detector import ObjectDetector
 from sim.util.object_manager import ObjectManager
 from sim.util.global_util import GlobalUtil
@@ -95,10 +97,10 @@ class Agent:
     
     def tick(self, time_scale):
         day_cycle = self.world_system_manager.time_engine.day_cycle
-        weather = self.world_system_manager.weather_engine.weather
+        weather_type = self.world_system_manager.weather_engine.weather_type
 
         self.vital_state.tick(time_scale)
-        self._update_environmental_debuff(day_cycle=day_cycle, weather=weather, time_scale=time_scale)
+        self._update_environmental_debuff(day_cycle=day_cycle, weather_type=weather_type, time_scale=time_scale)
 
     def think_tick(self):
         if not self.enable_thinking:
@@ -185,7 +187,7 @@ class Agent:
         self.engine.core_function.process_action_call(move_json, self)
         return True
 
-    def _update_environmental_debuff(self, time_scale, day_cycle, weather):
+    def _update_environmental_debuff(self, time_scale, day_cycle, weather_type):
         MAX_ENV_LIMIT = 0.15
 
         def apply_env_change(key, change_val):
@@ -200,22 +202,22 @@ class Agent:
                     self.personality_matrix[key] = max(0.0, min(1.0, round(new_matrix_val, 3)))
 
         # 시간대별 공통 굴절 (밤/저녁 ➔ 정서 하락 유도)
-        if day_cycle == "밤":
+        if day_cycle == DayCycleType.NIGHT:
             apply_env_change('fear_decisive', -(0.1 * time_scale))
             apply_env_change('logic_emotion', -(0.1 * time_scale))
-        elif day_cycle == "저녁":
+        elif day_cycle == DayCycleType.EVENING:
             apply_env_change('fear_decisive', -(0.05 * time_scale))
             
         # 기후별 공통 굴절 (악천후 디버프 vs 맑은 날 버프)
-        if weather in ["비", "흐림"]:
+        if weather_type in [WeatherType.RAINY, WeatherType.CLOUDY]:
             apply_env_change('logic_emotion', -(0.1 * time_scale))
             apply_env_change('curiosity_indifference', +(0.05 * time_scale)) # 무관심 소폭 증가
             
-        elif weather in ["천둥", "번개"]:
+        elif weather_type in [WeatherType.THUNDERSTORM]:
             apply_env_change('defensive_open', -(0.2 * time_scale))  # 방어성 증가
             apply_env_change('fear_decisive', -(0.2 * time_scale))   # 공포성 증가
             
-        elif weather == "맑음":
+        elif weather_type == WeatherType.CLEAR:
             # 맑은 날씨에는 최대 상한선(+0.15)을 넘지 않는 선에서 이성과 개방성을 기분 좋게 부스팅
             apply_env_change('logic_emotion', +(0.05 * time_scale))
             apply_env_change('defensive_open', +(0.05 * time_scale))

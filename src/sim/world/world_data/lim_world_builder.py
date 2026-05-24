@@ -4,12 +4,20 @@ from sim.objects.item_object import ItemObject
 from sim.object_meta.object_type import ObjectType, ObjectDetailType
 from sim.world.world_data.world_builder import WorldBuilder
 from sim.world.world_data.world_type import WorldType
+from sim.world.weather_engine import WeatherEngine, WeatherType
+from sim.world.time_engine import TimeEngine
 from sim.agents.lim import Lim
 
 class LimWorldBuilder(WorldBuilder):
     
     def __init__(self):
         super().__init__(WorldType.LIM_SIM)
+
+    def _create_weather_engine(self):
+        return WeatherEngine(weather_type=WeatherType.CLOUDY, remaining_hours=3)
+
+    def _create_time_engine(self):
+        return TimeEngine(start_year=3026, start_month=5, start_day=24, start_hour=5)
 
     def _create_agents(self, world_system_manager):
         lim = Lim(world_system_manager=world_system_manager)
@@ -94,19 +102,23 @@ class LimWorldBuilder(WorldBuilder):
         # [냉장고 내부/주변 음식 및 자원]
         water_bottle = ItemObject(name="생수병", detail="마시다 남은 투명한 생수병. 차가운 한기가 서려 있다.", detail_type=ObjectDetailType.DRINK, parent=kitchen)
         water_bottle.set_pos(2, 3)
+        water_bottle.set_nutri(5)
         self._add_object(water_bottle)
 
         canned_food = ItemObject(name="통조림", detail="유통기한이 정체된 먼지 쌓인 통조림. 영양을 보충할 수 있을 것 같다.", detail_type=ObjectDetailType.FOOD, parent=kitchen)
         canned_food.set_pos(3, 2)
+        canned_food.set_nutri(25)
         self._add_object(canned_food)
 
         # [식탁 및 싱크대 위 음식 오브젝트]
         stale_bread = ItemObject(name="딱딱한 빵", detail="수분이 완전히 날아가 딱딱하게 굳어버린 식빵 한 조각.", detail_type=ObjectDetailType.FOOD, parent=kitchen)
         stale_bread.set_pos(5, 5)
+        stale_bread.set_nutri(10)
         self._add_object(stale_bread)
 
         rotten_apple = ItemObject(name="썩은 사과", detail="검게 진물러 터진 사과. 마치 내면의 썩어가는 정서와 닮아 있다.", detail_type=ObjectDetailType.FOOD, parent=kitchen)
         rotten_apple.set_pos(2, 7)
+        rotten_apple.set_nutri(10)
         self._add_object(rotten_apple)
 
 

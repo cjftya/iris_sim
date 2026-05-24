@@ -1,7 +1,27 @@
+class SeasonType:
+    SPRING = "봄"
+    SUMMER = "여름"
+    AUTUMN = "가을"
+    WINTER = "겨울"
+
+class DayCycleType:
+    NIGHT = "밤"
+    MORNING = "아침"
+    DAY = "낮"
+    EVENING = "저녁"
+
+class WeekType:
+    MONDAY = "월요일"
+    TUESDAY = "화요일"
+    WEDNESDAY = "수요일"
+    THURSDAY = "목요일"
+    FRIDAY = "금요일"
+    SATURDAY = "토요일"
+    SUNDAY = "일요일"
+
 class TimeEngine:
     def __init__(self, start_year=3000, start_month=1, start_day=1, start_hour=8):
         """
-        가상 세계의 초기 시작 시간을 설정합니다.
         기본값: 3000년 1월 1일 8시
         """
         self.days_in_month = 30
@@ -68,30 +88,30 @@ class TimeEngine:
 
     def _update_day_of_week(self, total_days):
         # 일주일 주기는 누적된 총 일수(total_days)를 기준으로 계산합니다.
-        days_of_week = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+        days_of_week = [WeekType.MONDAY, WeekType.TUESDAY, WeekType.WEDNESDAY, WeekType.THURSDAY, WeekType.FRIDAY, WeekType.SATURDAY, WeekType.SUNDAY]
         self.day_of_week = days_of_week[total_days % 7]
 
     def _update_season(self):
         # 1~12월 범위 내에서 깔끔하게 매핑
         if self.month in [3, 4, 5]:
-            self.season = "봄"
+            self.season = SeasonType.SPRING
         elif self.month in [6, 7, 8]:
-            self.season = "여름"
+            self.season = SeasonType.SUMMER
         elif self.month in [9, 10, 11]:
-            self.season = "가을"
+            self.season = SeasonType.AUTUMN
         else:
-            self.season = "겨울"
+            self.season = SeasonType.WINTER
 
     def _update_day_cycle(self):
         # 0~23시 범위를 기준으로 조금 더 몰입감 있게 세분화 가능합니다.
         if 6 <= self.hour < 11:
-            self.day_cycle = "아침"
+            self.day_cycle = DayCycleType.MORNING
         elif 11 <= self.hour < 17:
-            self.day_cycle = "낮"
+            self.day_cycle = DayCycleType.DAY
         elif 17 <= self.hour < 21:
-            self.day_cycle = "저녁"
+            self.day_cycle = DayCycleType.EVENING
         else:
-            self.day_cycle = "밤"
+            self.day_cycle = DayCycleType.NIGHT
 
     def get_date(self):
         return f"{self.year:04d}-{self.month:02d}-{self.day:02d}"
@@ -100,7 +120,6 @@ class TimeEngine:
         return f"{self.hour:02d}:{self.minute:02d}:{self.second:02d}"
 
     def get_context(self):
-        # 텍스트가 정렬되도록 :02d 포맷(두 자리 숫자 맞춤)을 적용했습니다.
         return f"""\
 # 세계 시간 정보 (World Time Info)
 - 현재 시간: {self.year}년 {self.month:02d}월 {self.day:02d}일 {self.hour:02d}:{self.minute:02d}:{self.second:02d}

@@ -30,12 +30,12 @@ class WorldViewManager:
         time_engine = self.world_system_manager.time_engine
         weather_engine = self.world_system_manager.weather_engine
         
-        weather_name = weather_engine.weather
-        weather_description = weather_engine.get_weather_description(weather_name)
+        weather_type = weather_engine.weather_type
+        weather_description = weather_engine.get_weather_description(weather_type)
         
         view_data = f"""
 [WORLD] Date: {time_engine.get_date()} | Clock: {time_engine.get_clock()}
-[WEATHER] {weather_name}
+[WEATHER] {weather_type}
 ----------------------------------------------------------------------
 • Day of Week : {time_engine.day_of_week}
 • Current Day Cycle : {time_engine.day_cycle}
