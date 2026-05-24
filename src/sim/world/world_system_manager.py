@@ -3,11 +3,11 @@ from sim.core.jelly_llm_api import JellyLlmApi
 from sim.util.object_manager import ObjectManager
 from sim.util.agent_manager import AgentManager
 from sim.util.tool_manager import ToolManager
-from sim.agents.lim import Lim
 from sim.world.event_trigger import EventTrigger, EventType, ThinkEventType
 from sim.world.world_view_manager import WorldViewManager
 from sim.world.map_engine import MapEngine
-from sim.world.world_object_creator import WorldObjectCreator
+from sim.world.world_data_factory import WorldDataFactory
+from sim.world.world_data.world_type import WorldType
 from sim.world.weather_engine import WeatherEngine
 from sim.world.time_engine import TimeEngine
 from log import Logger
@@ -21,19 +21,17 @@ class WorldSystemManager:
         self.object_manager = ObjectManager()
 
         # 엔진
-        self.world_object_creator = WorldObjectCreator()
         self.weather_engine = WeatherEngine()
         self.time_engine = TimeEngine()
         self.event_trigger = EventTrigger()
         self.map_engine = MapEngine(self)
         self.world_view_manager = WorldViewManager(self)
+        self.world_data_factory = WorldDataFactory()
 
         self.tool_manager = ToolManager()
 
-        lim = Lim(world_system_manager=self)
-        self.agent_manager.add_agent(lim)
-        self.agents = self.agent_manager.get_agents()
-
+        self.world_agents = []
+        
         self.refresh_biometrics = None
         self.refresh_world_detail = None
         self.append_agent_chat_log = None
@@ -57,15 +55,19 @@ class WorldSystemManager:
         self.append_system_log = append_system_log
 
         # 월드 데이터 초기화
-        objects = self.world_object_creator.create_lim_world()
+        self.world_agents, objects = self.world_data_factory.get_world_data(WorldType.CAST_AWAY_SIM, self)
+
+        for agent in self.world_agents:
+            self.agent_manager.add_agent(agent)
+
         for obj in objects:
             self.object_manager.add_object(obj)
 
-        for agent in self.agents:
+        for agent in self.world_agents:
             agent.start(llm_requester)
 
     def stop(self):
-        for agent in self.agents:
+        for agent in self.world_agents:
             agent.stop()
 
         self.agent_manager.clear_agents()
@@ -77,9 +79,9 @@ class WorldSystemManager:
         self.time_engine.tick()
         self.weather_engine.tick(self.time_engine.time_scale, self.time_engine.season)
 
-        root_agent = self.agents[0]
+        root_agent = self.world_agents[0]
 
-        for agent in self.agents:
+        for agent in self.world_agents:
             agent.tick(self.time_engine.time_scale)
 
         agent_details = self.world_view_manager.update_agent_details_view(root_agent)
@@ -91,7 +93,7 @@ class WorldSystemManager:
         map_details = self.world_view_manager.update_ascii_map_view(root_agent)
         self.refresh_ascii_map(map_details)
 
-        event_objects = self.event_trigger.check_triggers(self.agents, self.weather_engine.weather)
+        event_objects = self.event_trigger.check_triggers(self.world_agents, self.weather_engine.weather)
         for obj in event_objects:
             event_agent = obj[0]
             event_type = obj[1]
@@ -106,12 +108,12 @@ class WorldSystemManager:
                 self.log_world_event(f"{event_agent.name}가 허기를 느낌.")
 
             if event_type == EventType.RANDOM_SCAN:
-                for agent in self.agents:
+                for agent in self.world_agents:
                     self.log_world_event(f"{agent.name}가 주변 탐색을 시도 함.")
                     agent.scan(event_message)
             
             if event_type == EventType.RANDOM_MOVE:
-                for agent in self.agents:
+                for agent in self.world_agents:
                     self.log_world_event(f"{agent.name}가 이동을 시도 함.")
                     if not agent.move():
                         self.log_world_event(f"{agent.name}가 이동에 실패 함.")
@@ -120,7 +122,7 @@ class WorldSystemManager:
                 event_agent.push_think_event(ThinkEventType.PLANNING, event_message, None)
                 self.log_world_event(f"{event_agent.name}가 계획 수립을 시도 함.")
 
-        for agent in self.agents:
+        for agent in self.world_agents:
             result = agent.think_tick()
             if result:
                 agent_log = self.world_view_manager.update_agent_log_view(agent, result)

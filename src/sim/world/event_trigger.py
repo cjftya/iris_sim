@@ -54,7 +54,7 @@ class EventTrigger:
             event_pack.append([None, EventType.RANDOM_MOVE, "[EXTERNAL_SIGNAL: 행동 명령] 이동하라."])
             return event_pack
 
-        # 계획 트리거 (15% 확률)
+        # 계획 트리거 (외부에서 직접 신호를 주지 않는 경우) (15% 확률)
         if self.turns_since_last_thought >= 30 and random.random() < 0.15:
             self.turns_since_last_thought = 0
             for agent in agents:
