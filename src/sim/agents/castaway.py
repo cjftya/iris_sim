@@ -1,5 +1,6 @@
 from sim.agents.agent import Agent
 from sim.tool.tool_type import ToolType
+from sim.agent_meta.vital_state import GenderType
 
 class Castaway(Agent):
     def __init__(self, world_system_manager=None):
@@ -8,6 +9,7 @@ class Castaway(Agent):
         self.position.x = 5.0
         self.position.y = 5.0
         self.vital_state.age = 32.0
+        self.vital_state.gender = GenderType.MALE
 
         self.location_delegate.set_current_location("해안가 캠프")
         self.location_delegate.add_all_locations([

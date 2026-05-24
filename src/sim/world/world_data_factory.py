@@ -13,6 +13,3 @@ class WorldDataFactory:
             return CastAwayWorldBuilder().build(world_system_manager)
 
         return None, None
-
-    
-    

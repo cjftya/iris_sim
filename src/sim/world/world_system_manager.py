@@ -112,11 +112,11 @@ class WorldSystemManager:
                     self.log_world_event(f"{agent.name}가 주변 탐색을 시도 함.")
                     agent.scan(event_message)
             
-            if event_type == EventType.RANDOM_MOVE:
-                for agent in self.world_agents:
-                    self.log_world_event(f"{agent.name}가 이동을 시도 함.")
-                    if not agent.move():
-                        self.log_world_event(f"{agent.name}가 이동에 실패 함.")
+            # if event_type == EventType.RANDOM_MOVE:
+            #     for agent in self.world_agents:
+            #         self.log_world_event(f"{agent.name}가 이동을 시도 함.")
+            #         if not agent.move():
+            #             self.log_world_event(f"{agent.name}가 이동에 실패 함.")
 
             if event_type == EventType.PROACTIVE_PULSE:
                 event_agent.push_think_event(ThinkEventType.PLANNING, event_message, None)
