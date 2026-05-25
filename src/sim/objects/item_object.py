@@ -13,9 +13,11 @@ class ItemObject(BaseObject):
         self.nutrition_value = 0
 
     def use(self):
+        # 소모품
         if self.detail_type in [ObjectDetailType.FOOD, ObjectDetailType.DRINK]:
             return self.detail_type, True
 
+        # 상태가 있는 경우
         if self.states:
             self.current_state_idx = (self.current_state_idx + 1) % len(self.states)
             return self.detail_type, False

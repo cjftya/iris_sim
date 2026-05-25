@@ -2,7 +2,6 @@ import json
 import re
 from sim.core.jelly_prompt import JellyPrompt
 from sim.core.jelly_memory import JellyMemory
-from sim.core.jelly_search import JellySearch
 from sim.core.jelly_llm_api import JellyLlmApi
 from sim.core.jelly_function import JellyFunction
 from sim.agent_meta.participants_delegate import ParticipantsDelegate
@@ -17,7 +16,6 @@ class JellyEngine:
         self.id = id
         self.core_llm_api = JellyLlmApi()
         self.core_memory = JellyMemory(db_path=f"../src/brain_db/[{self.id}]_brain")
-        self.core_search = JellySearch()
         self.core_function = JellyFunction(world_system_manager)
 
     def start(self, llm_requester):
@@ -98,6 +96,8 @@ class JellyEngine:
             current_location=agent.get_location_delegate().get_current_location(),
             available_locations=agent.get_location_delegate().get_available_locations(context_format=True),
             available_agent_inventory=agent.get_inventory().get_objects_full_context(),
+            before_action=agent.before_action,
+            before_action_reason=agent.before_action_reason,
             available_objects=available_objects,
             available_tools=agent.world_system_manager.tool_manager.get_tools_manual(available_tool_types),
             is_dialogue_mode=is_dialogue_mode,
@@ -199,6 +199,3 @@ class JellyEngine:
 
     def perform_brain_cleanup(self):
         self.core_memory.perform_brain_cleanup()
-
-    def set_serper_api_key(self, api_key):
-        self.core_search.set_serper_api_key(api_key)

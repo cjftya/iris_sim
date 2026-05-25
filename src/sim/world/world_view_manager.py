@@ -47,7 +47,7 @@ class WorldViewManager:
     def update_ascii_map_view(self, root_agent):
         # 정보 수집
         location = root_agent.get_location_delegate().get_current_location()
-        space = self.world_system_manager.object_manager.find_space(location)
+        space = self.world_system_manager.object_manager.get_object(location)
         location_detail = space.detail
 
         # 지도 초기화

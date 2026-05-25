@@ -15,7 +15,7 @@ class InspectTool(BaseTool):
     def execute(self, params, agent, world_system_manager):
         reason = params.get('reason', None)
         object_id = params.get('object_id')
-        target_object = world_system_manager.object_manager.get_object(object_id)
+        target_object = world_system_manager.object_manager.get_object_by_id(object_id)
         if not target_object:
             world_system_manager.log_system_event("skip function call: inspect, target object null")
             return

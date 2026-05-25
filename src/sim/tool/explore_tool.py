@@ -14,18 +14,18 @@ class ExploreTool(BaseTool):
         return ''
 
     def execute(self, params, agent, world_system_manager):
-        # 1. 가혹한 정찰 피로도 패널티 적용
+        # 가혹한 정찰 피로도 패널티 적용
         agent.vital_state.update_fatigue(75)
         agent.vital_state.update_hunger(50)
-        
-        # 2. 월드 전체 공간 중, 에이전트 인지 지도(LocationDelegate)에 없는 미지 구역 검색
-        all_spaces = [obj.name for obj in world_system_manager.object_manager.get_objects_by_type(ObjectType.SPACE)]
+
+        # 월드 전체 공간 중, 에이전트 인지 지도에 없는 미지 구역 검색
+        all_spaces = world_system_manager.object_manager.get_objects_by_type(ObjectType.SPACE)
+        all_spaces_name = [space.name for space in all_spaces]
         known_spaces = agent.location_delegate.get_available_locations()
-        unknown_spaces = list(set(all_spaces) - set(known_spaces))
+        unknown_spaces = list(set(all_spaces_name) - set(known_spaces))
         
         if unknown_spaces:
             discovered = random.choice(unknown_spaces)
-            # 에이전트의 공간 가용 범위 동적 확장 (안개 걷히기 기믹)
             agent.location_delegate.add_location(discovered)
             world_system_manager.log_world_event(f"{agent.name}가 가혹한 수풀을 헤치며 정찰한 결과, 새로운 구역 [{discovered}]을 발견하여 인지 지도에 등록함.")
         else:

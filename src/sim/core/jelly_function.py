@@ -14,6 +14,8 @@ class JellyFunction:
         
         parameters = action_call.get('parameters', {})
         parameters['reason'] = action_call.get('reason', '이유 없음')
+        agent.before_action = function_name
+        agent.before_action_reason = parameters['reason']
         try:
             tool = self.world_system_manager.tool_manager.get_tool_by_name(function_name)
             tool.execute(parameters, agent, self.world_system_manager)

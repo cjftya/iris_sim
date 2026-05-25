@@ -1,4 +1,5 @@
 import time
+import random
 from sim.core.jelly_llm_api import JellyLlmApi
 from sim.util.object_manager import ObjectManager
 from sim.util.agent_manager import AgentManager
@@ -111,8 +112,9 @@ class WorldSystemManager:
 
             if event_type == EventType.RANDOM_SCAN:
                 for agent in self.world_agents:
-                    self.log_world_event(f"{agent.name}가 주변 탐색을 시도 함.")
-                    agent.scan(event_message)
+                    if random.random() < 0.5:
+                        self.log_world_event(f"{agent.name}가 주변 탐색을 시도 함.")
+                        agent.scan(event_message)
 
             if event_type == EventType.PROACTIVE_PULSE:
                 event_agent.push_think_event(ThinkEventType.PLANNING, event_message, None)

@@ -6,7 +6,8 @@ class JellyPrompt:
 # 다자간 사회적 인지 (Social Context)
 - **Available Participants**: {available_participants}
 - **Relationship Scores**: {relationships} (0~100)
-*규칙*: 관계 점수가 낮은 상대의 발언은 무시하거나, 가장 비관적인 방향으로 해석(Refraction)하라.
+*규칙 1*: 관계 점수가 낮은 상대의 발언은 무시하거나, 가장 비관적인 방향으로 해석(Refraction)하라.
+*규칙 2*: 만약 대화가 무가치하거나, 상대가 위협적이거나, 본인의 결핍(Hunger/Fatigue) 또는 목적 달성이 더 시급하다면 대화를 계속하는 대신 `move_to` 도구를 사용하여 즉시 자리를 이탈하라.
 """
 
     @staticmethod
@@ -36,6 +37,7 @@ class JellyPrompt:
                         current_location=None, available_locations=None,
                         available_objects=None, available_tools=None,
                         available_agent_inventory=None,
+                        before_action=None, before_action_reason=None,
                         is_dialogue_mode=False,
                         vital_context=None,
                         world_state_context=None):
@@ -67,6 +69,11 @@ class JellyPrompt:
 
 # 과거의 파편화된 기억 연상 (Retrieved Memories)
 {retrieved_memories}
+
+# 나의 단기 작업 기억 (Short-term Working Memory)
+당신이 바로 직전 턴에 집행한 최종 의사결정과 그 정서적/이성적 근거이다. 이를 바탕으로 행동의 연속성을 유지하거나 전략을 수정하라.
+- **직전 실행 행동**: {before_action}
+- **행동 집행 의도(Reason)**: "{before_action_reason}"
 
 # 내 신체 상태 (Vital Status)
 {vital_context}

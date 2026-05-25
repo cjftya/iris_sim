@@ -10,7 +10,7 @@ from sim.world.event_trigger import ThinkEventType
 from sim.world.weather_engine import WeatherType
 from sim.world.time_engine import DayCycleType, SeasonType
 from sim.util.object_detector import ObjectDetector
-from sim.util.object_manager import ObjectManager
+from sim.util.object_manager import ObjectManager, ObjectType
 from sim.util.global_util import GlobalUtil
 from sim.util.point import Point
 from sim.tool.tool_type import ToolType
@@ -26,6 +26,10 @@ class Agent:
 
         # Think Event 큐
         self.think_event_queue = {}
+
+        # 이전 행동 정보
+        self.before_action = "none"
+        self.before_action_reason = ""
 
         # 월드 시스템 매니져
         self.world_system_manager = world_system_manager
@@ -94,6 +98,10 @@ class Agent:
     def push_think_event(self, think_event_type, message, data=None):
         self.set_enable_thinking(True)
         self.think_event_queue[think_event_type] = {"message":message, "data":data}
+
+    def clear_think_event(self):
+        self.set_enable_thinking(False)
+        self.think_event_queue.clear()
     
     def tick(self, time_scale):
         day_cycle = self.world_system_manager.time_engine.day_cycle
@@ -139,7 +147,6 @@ class Agent:
             think_event = self.think_event_queue[ThinkEventType.FIND_ITEM]
             think_event_message = think_event.get("message", "")
             found_objects = think_event.get("data", None)
-            print(think_event_message + " " + str(len(found_objects)))
 
             self.think_event_queue.clear()
             res = self.engine.search(agent=self, external_event=think_event_message, detected_objects=found_objects, available_tool_types=self.get_available_tool_types(False))
@@ -160,7 +167,6 @@ class Agent:
         # event signal
         combined_signal = ""
         for think_event_type, think_event in self.think_event_queue.items():
-            # 이벤트에 따라서 조합을 커스텀 할 수 있음
             think_event_message = think_event.get("message", "")
             combined_signal += f"{think_event_message}\n"
         self.think_event_queue.clear()
@@ -276,7 +282,7 @@ class Agent:
         return detected_agents
 
     def perceive_objects(self):
-        world_objects = self.world_system_manager.object_manager.get_objects()
+        world_objects = self.world_system_manager.object_manager.get_objects_by_type(ObjectType.ITEM)
         detected_entities = self.object_detector.detect_objects(self, world_objects)
         return detected_entities
     

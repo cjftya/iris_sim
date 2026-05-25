@@ -25,7 +25,7 @@ class TimeEngine:
         기본값: 3000년 1월 1일 8시
         """
         self.days_in_month = 30
-        self.seconds_to_advance = 60  # 턴당 60초
+        self.seconds_to_advance = 300  # 턴당 300초
         self.time_scale = self.seconds_to_advance / 3600
         
         # 시작 날짜를 가상 세계의 '총 누적 초(Total Seconds)'로 환산

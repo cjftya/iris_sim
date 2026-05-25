@@ -27,7 +27,15 @@ class VitalState:
         # 사망 여부 플래그
         self.is_alive = True
 
+        # 경고 신호
         self.warning = ""
+
+        # 각 에이전트별로 변화 속도를 조절하기 위한 값
+        self.hunger_damp = 0.5
+        self.fatigue_damp = 0.5
+        self.health_damp = 1.0
+        self.auto_revise_value = 0.5
+        self.auto_revise_condition_value = 30.0
 
     def update_hunger(self, value):
         self.hunger = max(0.0, min(self.max_hunger, self.hunger + value))
@@ -48,21 +56,22 @@ class VitalState:
         fatigue_per_hour = DAILY_FATIGUE_GAIN / 24.0
         hunger_per_hour = DAILY_HUNGER_GAIN / 24.0
 
-        self.fatigue = min(self.max_fatigue, self.fatigue + (fatigue_per_hour * time_scale))
-        self.hunger = min(self.max_hunger, self.hunger + (hunger_per_hour * time_scale))
+        # damp에 따라 누적량을 조절
+        self.fatigue = min(self.max_fatigue, self.fatigue + (fatigue_per_hour + self.fatigue_damp) * time_scale)
+        self.hunger = min(self.max_hunger, self.hunger + (hunger_per_hour + self.hunger_damp) * time_scale)
 
         # 상태 상호작용 (패널티 적용)
         # 배가 고프거나 너무 지치면 건강(health)이 깎임
         if self.hunger >= self.max_hunger:
-            self.health = max(0.0, self.health - (2.0 * time_scale))
+            self.health = max(0.0, self.health - ((2 * self.health_damp) * time_scale))
             
         if self.fatigue >= self.max_fatigue:
-            self.health = max(0.0, self.health - (1.0 * time_scale))
+            self.health = max(0.0, self.health - ((1 * self.health_damp) * time_scale))
 
         # 자연 치유 메커니즘
-        # 허기와 피로가 모두 낮은 상태(예: 30 미만)라면 건강 회복
-        if self.hunger < 30.0 and self.fatigue < 30.0 and self.health < self.max_health:
-            self.health = min(self.max_health, self.health + (0.5 * time_scale))
+        # 허기와 피로가 모두 낮고, 건강이 최대가 아닐 때 회복
+        if self.hunger < self.auto_revise_condition_value and self.fatigue < self.auto_revise_condition_value and self.health < self.max_health:
+            self.health = min(self.max_health, self.health + (self.auto_revise_value * time_scale))
 
         # 건강 상태 직관적 라벨링
         if self.health > 80: self.health_label = "최상"

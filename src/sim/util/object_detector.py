@@ -26,20 +26,28 @@ class ObjectDetector:
         return dynamic_range
 
     def detect_agents(self, agent, all_agents):
-        agents_list = [a for a in all_agents if a.vital_state.is_alive]
-        if len(agents_list) == 1 and agent.id == agents_list[0].id:
-            return []
+        agents_list = []
+        curr_location = agent.get_location_delegate().get_current_location()
+        for entity in all_agents:
+            if agent.id == entity.id:
+                continue
+
+            other_agent_location = entity.get_location_delegate().get_current_location()
+            if other_agent_location is None:
+                continue
+
+            if entity.vital_state.is_alive and other_agent_location == curr_location:
+                agents_list.append(entity)
 
         return self._detect_entities(agent, agents_list)
 
     def detect_objects(self, agent, world_objects):
         current_room_name = agent.location_delegate.get_current_location()
-        objects_list = [
-            o for o in world_objects 
-            if o.type == ObjectType.ITEM 
-            and o.parent is not None 
-            and o.parent.name == current_room_name
-        ]
+        objects_list = []
+        for obj in world_objects:
+            if obj.parent is not None and obj.parent.name == current_room_name:
+                objects_list.append(obj)
+
         return self._detect_entities(agent, objects_list)
 
     def _detect_entities(self, agent, entities):
@@ -50,6 +58,7 @@ class ObjectDetector:
         agent_pos = agent.position
         current_range = self._calculate_dynamic_range(agent.personality_matrix, agent.vital_state)
 
+        duplicate_map = {}
         for entity in entities:
             if hasattr(entity, 'id') and entity.id == agent.id:
                 continue
@@ -59,7 +68,16 @@ class ObjectDetector:
             distance = math.sqrt(dx**2 + dy**2)
             if distance > current_range: 
                 continue
-                
+
+            # 감지된 item의 종류당 3개 이상이면 detection list에 추가하지 않는다.
+            # if duplicate_map.get(entity.name) is None:
+            #     duplicate_map[entity.name] = 0
+            # else:
+            #     duplicate_map[entity.name] += 1
+            
+            # if duplicate_map[entity.name] < 4:
+            #     detected_list.append(entity)
+
             detected_list.append(entity)
 
         return detected_list

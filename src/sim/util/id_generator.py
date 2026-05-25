@@ -10,4 +10,3 @@ class IdGenerator:
     def gen_object_id(self):
         self.object_id += 1
         return f"OBJECT_{self.object_id}"
-

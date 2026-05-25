@@ -20,10 +20,9 @@ class MoveTool(BaseTool):
             
             # 무한 확장 절대 좌표계를 고려한 로컬 좌표 초기화
             target_space = None
-            all_objects = world_system_manager.object_manager.get_objects()
-            for obj in all_objects:
-                # obj.type == 0 (SpaceObject) 이고 이름이 같은 공간 객체 검색
-                if obj.type == ObjectType.SPACE and obj.name == location: 
+            space_objects = world_system_manager.object_manager.get_objects_by_type(ObjectType.SPACE)
+            for obj in space_objects:
+                if obj.name == location: 
                     target_space = obj
                     break
             
