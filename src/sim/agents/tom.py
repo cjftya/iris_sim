@@ -62,12 +62,13 @@ class Tom(Agent):
       - [Visceral Impulse]: 춥고 뼈가 시리지만 내 눈앞에서 떨고 있는 제인을 봐라. 쉴 시간이 없다. 움직여서 자원을 선점하라.\
 """
 
-    def get_available_tool_types(self, is_dialogue_mode):
-        if is_dialogue_mode:
-            return [ToolType.SPEAK, ToolType.GIVE, ToolType.NONE, ToolType.MOVE_TO]
-        else:
-            return [
-                ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, 
-                ToolType.USE, ToolType.REST, ToolType.EXPLORE, 
-                ToolType.BUILD_RAFT, ToolType.LIGHT_SIGNAL, ToolType.NONE
-            ]
+    def _create_tools(self, dia_tool_delegate, exp_tool_delegate):
+        dia_tool_delegate.add_all_available_tool_types([
+            ToolType.SPEAK, ToolType.GIVE, ToolType.NONE, ToolType.MOVE_TO
+        ])
+
+        exp_tool_delegate.add_all_available_tool_types([
+            ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, 
+            ToolType.USE, ToolType.REST, ToolType.EXPLORE, 
+            ToolType.BUILD_RAFT, ToolType.LIGHT_SIGNAL, ToolType.NONE
+        ])

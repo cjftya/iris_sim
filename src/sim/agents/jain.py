@@ -69,11 +69,12 @@ class Jain(Agent):
       - [Limitation]: 절대로 혼자서 새로운 미지 구역을 개척(EXPLORE)하거나 뗏목 제작(BUILD_RAFT) 같은 고강도 노동을 시도하지 말 것. 그건 네 힘으로는 불가능하다.\
 """
 
-    def get_available_tool_types(self, is_dialogue_mode):
-        if is_dialogue_mode:
-            return [ToolType.SPEAK, ToolType.GIVE, ToolType.NONE, ToolType.MOVE_TO]
-        else:
-            return [
-                ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, 
-                ToolType.USE, ToolType.REST, ToolType.NONE
-            ]
+    def _create_tools(self, dia_tool_delegate, exp_tool_delegate):
+        dia_tool_delegate.add_all_available_tool_types([
+            ToolType.SPEAK, ToolType.GIVE, ToolType.NONE, ToolType.MOVE_TO
+        ])
+
+        exp_tool_delegate.add_all_available_tool_types([
+            ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, 
+            ToolType.USE, ToolType.REST, ToolType.NONE
+        ])

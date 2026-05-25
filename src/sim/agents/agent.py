@@ -2,6 +2,7 @@ import random
 from sim.core.jelly_engine import JellyEngine
 from sim.agent_meta.participants_delegate import ParticipantsDelegate
 from sim.agent_meta.location_delegate import LocationDelegate
+from sim.agent_meta.tool_detegate import ToolDelegate
 from sim.agent_meta.vital_state import VitalState
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -46,6 +47,12 @@ class Agent:
         # 공간 정보
         self.location_delegate = LocationDelegate()
 
+        # 대화 모드 툴 정보
+        self.dia_tool_delegate = ToolDelegate()
+
+        # 탐색 모드 툴 정보
+        self.exp_tool_delegate = ToolDelegate()
+
         # 인벤토리
         self.inventory = ObjectManager()
 
@@ -74,6 +81,8 @@ class Agent:
 
         # 관계 정보
         self.relationship_map = {}
+
+        self._create_tools(self.dia_tool_delegate, self.exp_tool_delegate)
 
     def start(self, llm_requester):
         self.engine.start(llm_requester)
@@ -272,9 +281,18 @@ class Agent:
 
     def get_available_tool_types(self, is_dialogue_mode):
         if is_dialogue_mode:
-            return [ToolType.SPEAK, ToolType.GIVE, ToolType.NONE]
+            return self.dia_tool_delegate.get_available_tool_types()
         else:
-            return [ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, ToolType.USE, ToolType.REST, ToolType.NONE]
+            return self.exp_tool_delegate.get_available_tool_types()
+
+    def _create_tools(self, dia_tool_delegate, exp_tool_delegate):
+        dia_tool_delegate.add_all_available_tool_types(
+            [ToolType.SPEAK, ToolType.GIVE, ToolType.NONE]
+        )
+        
+        exp_tool_delegate.add_all_available_tool_types(
+            [ToolType.TAKE, ToolType.MOVE_TO, ToolType.INSPECT, ToolType.USE, ToolType.REST, ToolType.NONE]
+        )
 
     def perceive_agents(self):
         all_agents = self.world_system_manager.agent_manager.get_agents()

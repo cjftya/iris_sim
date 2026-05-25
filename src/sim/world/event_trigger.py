@@ -87,7 +87,7 @@ class EventTrigger:
             return event_pack
 
         # 스캔 신호
-        if self.scan_timer >= SCAN_INTERVAL and random.random() < 0.2:
+        if self.scan_timer >= SCAN_INTERVAL and random.random() < 0.08:
             self.scan_timer = 0
             event_pack.append([None, EventType.RANDOM_SCAN, "[EXTERNAL_SIGNAL: 환경 스캔] 주변 환경을 확인하라."])
             return event_pack
