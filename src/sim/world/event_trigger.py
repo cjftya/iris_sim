@@ -74,7 +74,7 @@ class EventTrigger:
             self.plan_timer = 0
             for agent in agents:
                 # 모든 에이전트를 추가하면 안되고 랜덤하게 추가하도록
-                if random.random() < 0.5:
+                if random.random() < 0.4:
                     event_pack.append([agent, EventType.PROACTIVE_PULSE, "[EXTERNAL_SIGNAL: 자율 계획] 현재 상황을 종합적으로 분석하고, 당신의 궁극적인 목표를 달성하기 위한 단계별 행동 전략을 수립하라."])
             return event_pack
 

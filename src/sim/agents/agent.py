@@ -96,13 +96,20 @@ class Agent:
         if len(found_agents) <= 0 and len(found_objects) <= 0:
             return
 
-        if len(found_agents) > 0 and self.vital_state.fatigue < 70 and self.vital_state.health > 30:
-            ran_num = self.personality_matrix['defensive_open'] + random.random()
-            if ran_num >= 1.0:
-                self.push_think_event(ThinkEventType.FIND_AGENT, external_event + " 주변에 대화할 만한 대상이 있다.", found_agents)
+        # 40센트 확률로 대화 60퍼센트 확률로 사물탐색
+        if random.random() < 0.4:
+            if len(found_agents) > 0 and self.vital_state.fatigue < 70 and self.vital_state.health > 30:
+                ran_num = self.personality_matrix['defensive_open'] + random.random()
+                if ran_num >= 1.0:
+                    msg = " 주변에 다른 상대가 보인다. 너의 신체적 겹핍, 목적 달성에 따라 대상에게 말을 걸지 무시할지 판단하라. 대화가 의미 없다면 'move_to' 도구를 이용하여 장소를 이동하라."
+                    self.push_think_event(ThinkEventType.FIND_AGENT, external_event + msg, found_agents)
+                    return
 
-        if len(found_objects) > 0:
-            self.push_think_event(ThinkEventType.FIND_ITEM, external_event + " 주위에 관심있는 사물이 있다.", found_objects)
+        if random.random() < 0.6:
+            if len(found_objects) > 0:
+                msg = " 주위에 관심있는 사물이 있다. 너의 신체적 겹핍, 목적 달성에 따라 사물을 조사하거나 획득할지 결정하라."
+                self.push_think_event(ThinkEventType.FIND_ITEM, external_event + msg, found_objects)
+                return
 
     def push_think_event(self, think_event_type, message, data=None):
         self.set_enable_thinking(True)
